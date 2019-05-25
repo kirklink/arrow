@@ -1,0 +1,6 @@
+name: resources
+description: 'Resource standardization for Arrow'
+version: 0.0.1
+environment:
+  sdk: ^2.1.0
+
