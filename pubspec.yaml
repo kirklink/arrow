@@ -9,6 +9,6 @@ dependencies:
   path: ^1.6.2
   recase: 2.0.0+1
   bottom_line:
-    path: ../bottom_line
+    git: git://github.com/kirklink/bottom_line.git
 dev_dependencies:
   build_runner:
