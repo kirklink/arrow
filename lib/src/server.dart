@@ -2,19 +2,22 @@ import 'dart:io';
 
 import 'router.dart';
 import 'request.dart';
-import 'backends.dart';
+import 'service.dart';
 import 'global.dart';
 
 class Server {
   Router _router;
   int _port;
+  Map<String, String> _env = Platform.environment;
+
+  bool get onProduction =>
+      _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
 
   Server(this._router, {int port}) {
-    Map<String, String> env = Platform.environment;
-    var p = int.tryParse(env['PORT']);
-    if (p == null && env['PORT'] != null) {
+    var p = int.tryParse(_env['PORT']);
+    if (p == null && _env['PORT'] != null) {
       throw Exception(
-          'Port provided from environment could not be converted to integer: ${env['PORT']}');
+          'Port provided from environment could not be converted to integer: ${_env['PORT']}');
     }
     if (p != null) {
 //        print('Using port $p from environment.');
@@ -26,22 +29,22 @@ class Server {
     }
   }
 
-  Future start<T extends Backends>({bool forceSSL: false, T backends}) async {
+  Future start<T extends Service>({bool forceSSL: false, T service}) async {
     var _server = await HttpServer.bind(InternetAddress.anyIPv4, _port);
-//    print('Server listening on localhost, port ${_server.port}');
-    Map<String, String> env = Platform.environment;
-    bool onProduction = env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
+    if (!onProduction) print(
+        'Server listening on localhost, port ${_server.port}');
+    var onProd = onProduction;
     var validBackends = <String, String>{};
-    env.forEach((k, v) {
-      if (k.toLowerCase().startsWith('backend')) {
+    _env.forEach((k, v) {
+      if (k.toLowerCase().startsWith('service')) {
         validBackends[k] = v;
       }
     });
-    backends.fromJson(validBackends);
-    Global({'ENV': env, 'BACKENDS': backends});
+    service.fromMap(validBackends);
+    Global({'ENV': _env, 'SERVICE': service});
     await for (HttpRequest req in _server) {
       var reqUri = req.requestedUri;
-      if (onProduction && forceSSL && reqUri.scheme != 'https') {
+      if (onProd && forceSSL && reqUri.scheme != 'https') {
         req.response.redirect(
             Uri.https(reqUri.authority, reqUri.path, reqUri.queryParameters),
             status: HttpStatus.movedPermanently);

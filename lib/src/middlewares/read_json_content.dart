@@ -15,8 +15,7 @@ Future<Request> readJsonContent(Request req) async {
     return req;
   } else {
     try {
-      var j = json.decode(content);
-      req.content = JsonContent(j);
+      req.content = JsonContent(content);
     } on FormatException catch (e) {
       var res = req.respond();
       res.manager.errorMessages.add(
