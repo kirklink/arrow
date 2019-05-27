@@ -10,4 +10,4 @@ export 'src/pipeline.dart';
 export 'src/constants.dart';
 export 'src/responder.dart' show ToJson;
 export 'src/context.dart' show contextKey;
-export 'src/service.dart' show Service;
+export 'src/environment.dart' show Environment;

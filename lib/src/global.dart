@@ -1,4 +1,5 @@
 import 'package:bottom_line/bottom_line.dart';
+import 'package:arrow/src/environment.dart';
 
 class GlobalException implements Exception {
   final String message;
@@ -26,4 +27,9 @@ class Global {
     _cache = Global._internal(variables);
     return _cache;
   }
+
+  T env<T extends Environment>() {
+    return _variables.get('ENV_OBJ');
+  }
+
 }

@@ -38,6 +38,12 @@ class Responder {
     _response.write(message);
   }
 
+  void relayJson(String message, int statusCode) {
+    _response.statusCode = statusCode;
+    _response.headers.contentType = ContentType.json;
+    _response.write(message);
+  }
+
   void ok(Map<String, Object> message,
       {int statusCode, String wrapper, bool wrapped}) {
     _setWrapper(wrapper, wrapped);

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'router.dart';
 import 'request.dart';
-import 'service.dart';
+import 'environment.dart';
 import 'global.dart';
 
 class Server {
@@ -29,22 +29,15 @@ class Server {
     }
   }
 
-  Future start<T extends Service>({bool forceSSL: false, T service}) async {
+  Future start<T extends Environment>({bool forceSSL: false, T environment}) async {
     var _server = await HttpServer.bind(InternetAddress.anyIPv4, _port);
     if (!onProduction) print(
         'Server listening on localhost, port ${_server.port}');
-    var onProd = onProduction;
-    var validBackends = <String, String>{};
-    _env.forEach((k, v) {
-      if (k.toLowerCase().startsWith('service')) {
-        validBackends[k] = v;
-      }
-    });
-    service.fromMap(validBackends);
-    Global({'ENV': _env, 'SERVICE': service});
+    environment.fromMap(_env);
+    Global({'ENV': _env, 'ENV_OBJ': environment});
     await for (HttpRequest req in _server) {
       var reqUri = req.requestedUri;
-      if (onProd && forceSSL && reqUri.scheme != 'https') {
+      if (onProduction && forceSSL && reqUri.scheme != 'https') {
         req.response.redirect(
             Uri.https(reqUri.authority, reqUri.path, reqUri.queryParameters),
             status: HttpStatus.movedPermanently);

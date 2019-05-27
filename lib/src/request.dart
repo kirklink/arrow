@@ -35,25 +35,14 @@ class Request extends Message {
     return Response(this, wrapper: wrapper, wrapped: wrapped);
   }
 
-  Future<Response> forward(String host) async {
-//    Uri uri = Uri.parse('http://127.0.0.1:8999/echo-2');
-    Uri nextUri = u.UriBuilder.fromUri(uri).build();
-    nextUri.replace(host: host);
-    var req = http.Request('POST', uri);
-    print(_content);
+  Future<Response> forward(Uri uri) async {
+    var req = http.Request(innerRequest.method, uri);
     req.body = _content.encode();
-    print(req.body);
     req.headers.putIfAbsent('Content-Type', () => 'application/json');
-
-    print('sending');
-    print(uri);
     http.StreamedResponse next = await req.send();
-    print('got');
-    var body = json.decode(await next.stream.bytesToString());
-    print('body');
-    print(next.statusCode);
+    var body = await next.stream.bytesToString();
     var res = this.respond(wrapped: false);
-    res.send.ok(body);
+    res.send.relayJson(body, next.statusCode);
     return res;
   }
 
