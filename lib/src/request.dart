@@ -35,10 +35,12 @@ class Request extends Message {
     return Response(this, wrapper: wrapper, wrapped: wrapped);
   }
 
-  Future<Response> forward(Uri uri) async {
+  Future<Response> forward(Uri uri, {String jwt}) async {
     var req = http.Request(innerRequest.method, uri);
     req.body = _content.encode();
     req.headers.putIfAbsent('Content-Type', () => 'application/json');
+    if (jwt != null) req.headers.putIfAbsent(
+        'Authorization', () => 'Bearer $jwt');
     http.StreamedResponse next = await req.send();
     var body = await next.stream.bytesToString();
     var res = this.respond(wrapped: false);
