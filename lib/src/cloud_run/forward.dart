@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 
-import 'request.dart';
-import 'response.dart';
+import 'package:arrow/src/request.dart';
+import 'package:arrow/src/response.dart';
 
 Future<Response> forward(Request req, String host,
     {String path, Map<String, String> params}) async {
@@ -24,9 +24,16 @@ Future<Response> forward(Request req, String host,
   forwardReq.body = req.content.encode();
   forwardReq.headers['Content-Type'] = req.headers.contentType.value;
   if (jwt != null) forwardReq.headers['Authorization'] = 'Bearer $jwt';
-  http.StreamedResponse next = await forwardReq.send();
-  var body = await next.stream.bytesToString();
-  var res = req.respond(wrapped: false);
-  res.send.relayJson(body, next.statusCode);
-  return res;
+  Response res;
+  try {
+    http.StreamedResponse next = await forwardReq.send();
+    var body = await next.stream.bytesToString();
+    res = req.respond(wrapped: false);
+    res.send.relayJson(body, next.statusCode);
+  } catch (e) {
+    res = req.respond();
+    res.send.serverError();
+  } finally {
+    return res;
+  }
 }
