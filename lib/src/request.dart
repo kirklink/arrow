@@ -7,10 +7,13 @@ import 'package:arrow/src/message.dart';
 import 'package:arrow/src/response.dart';
 import 'package:arrow/src/parameters.dart';
 import 'package:arrow/src/content.dart';
+import 'package:arrow/src/global.dart';
 
 class Request extends Message {
   Parameters _params = Parameters();
   Content _content;
+  Global _global = Global();
+
 
   Request(HttpRequest innerRequest) : super(innerRequest) {}
 
@@ -23,6 +26,12 @@ class Request extends Message {
 
   Parameters get params => _params;
 
+  Global get global => _global;
+
+  Map<String, Object> get env => _global.variables.get('ENV');
+
+  bool get isOnProd => env['ARROW_ENVIRONMENT'] == 'production';
+
   // New functionality.
   Content get content => _content;
 
@@ -33,19 +42,6 @@ class Request extends Message {
 
   Response respond({String wrapper, bool wrapped}) {
     return Response(this, wrapper: wrapper, wrapped: wrapped);
-  }
-
-  Future<Response> forward(Uri uri, {String jwt}) async {
-    var req = http.Request(innerRequest.method, uri);
-    req.body = _content.encode();
-    req.headers.putIfAbsent('Content-Type', () => 'application/json');
-    if (jwt != null) req.headers.putIfAbsent(
-        'Authorization', () => 'Bearer $jwt');
-    http.StreamedResponse next = await req.send();
-    var body = await next.stream.bytesToString();
-    var res = this.respond(wrapped: false);
-    res.send.relayJson(body, next.statusCode);
-    return res;
   }
 
   void cancel() {
