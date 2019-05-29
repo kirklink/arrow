@@ -18,15 +18,12 @@ Future<Response> forward(Request req, String host,
         await http.get(tokenURL, headers: {'Metadata-Flavor': 'Google'});
     jwt = tokenResponse.body;
   } else {
-    print(host + path);
     uri = Uri.parse('http://${host}${path}');
-    print(uri.toString());
   }
   var forwardReq = http.Request(req.method, uri);
   forwardReq.body = req.content.encode();
   forwardReq.headers['Content-Type'] = req.headers.contentType.value;
   if (jwt != null) forwardReq.headers['Authorization'] = 'Bearer $jwt';
-  print(forwardReq.headers);
   http.StreamedResponse next = await forwardReq.send();
   var body = await next.stream.bytesToString();
   var res = req.respond(wrapped: false);
