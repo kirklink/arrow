@@ -24,10 +24,11 @@ Future<Response> forward(Request req, String host,
   }
   var forwardReq = http.Request(req.method, uri);
   forwardReq.body = req.content.encode();
-  forwardReq.headers
-      .putIfAbsent('Content-Type', () => req.headers.contentType.value);
-  if (jwt != null)
-    forwardReq.headers.putIfAbsent('Authorization', () => 'Bearer $jwt');
+//  forwardReq.headers
+//      .putIfAbsent('content-type', () => req.headers.contentType.value);
+//  if (jwt != null)
+//    forwardReq.headers.putIfAbsent('Authorization', () => 'Bearer $jwt');
+//  print(forwardReq.headers);
   http.StreamedResponse next = await forwardReq.send();
   var body = await next.stream.bytesToString();
   var res = req.respond(wrapped: false);
