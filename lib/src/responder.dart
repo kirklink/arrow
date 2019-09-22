@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:async';
-import 'package:http/http.dart';
 import 'dart:convert' show jsonEncode;
 
 import 'package:arrow/src/manager.dart';

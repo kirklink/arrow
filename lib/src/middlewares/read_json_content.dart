@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert' show utf8, json;
+import 'dart:convert' show utf8;
 
 import 'package:arrow/src/request.dart';
 import 'package:arrow/src/content.dart';
 
 Future<Request> readJsonContent(Request req) async {
-  String content = await req.innerRequest.transform(utf8.decoder).join();
+  String content = await utf8.decodeStream(req.innerRequest);
   if ((req.method == 'POST' || req.method == 'PUT') &&
       (content == null || content == '')) {
     var res = req.respond();
@@ -16,7 +16,7 @@ Future<Request> readJsonContent(Request req) async {
   } else {
     try {
       req.content = JsonContent(content);
-    } on FormatException catch (e) {
+    } on FormatException catch (_) {
       var res = req.respond();
       res.manager.errorMessages.add(
           '[readJsonContent] Could not decode bad json format in request.');

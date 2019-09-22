@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'router.dart';
 import 'request.dart';
-import 'environment.dart';
-import 'global.dart';
 
 class Server {
   Router _router;
@@ -29,12 +27,10 @@ class Server {
     }
   }
 
-  Future start<T extends Environment>({bool forceSSL: false, T environment}) async {
+  Future start({bool forceSSL: false}) async {
     var _server = await HttpServer.bind(InternetAddress.anyIPv4, _port);
     if (!onProduction) print(
         'Server listening on localhost, port ${_server.port}');
-    environment.fromMap(_env);
-    Global({'ENV': _env, 'ENV_OBJ': environment});
     await for (HttpRequest req in _server) {
       var reqUri = req.requestedUri;
       if (onProduction && forceSSL && reqUri.scheme != 'https') {

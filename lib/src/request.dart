@@ -1,19 +1,14 @@
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'dart:convert' show utf8, json;
 import 'package:uri/uri.dart' as u;
 
 import 'package:arrow/src/message.dart';
 import 'package:arrow/src/response.dart';
 import 'package:arrow/src/parameters.dart';
 import 'package:arrow/src/content.dart';
-import 'package:arrow/src/global.dart';
 
 class Request extends Message {
   Parameters _params = Parameters();
   Content _content;
-  Global _global = Global();
-
 
   Request(HttpRequest innerRequest) : super(innerRequest) {}
 
@@ -26,11 +21,7 @@ class Request extends Message {
 
   Parameters get params => _params;
 
-  Global get global => _global;
-
-  Map<String, Object> get env => _global.variables.get('ENV');
-
-  bool get isOnProd => env['ARROW_ENVIRONMENT'] == 'production';
+  bool get isOnProd => Platform.environment['ARROW_ENVIRONMENT'] == 'production';
 
   // New functionality.
   Content get content => _content;

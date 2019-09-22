@@ -3,7 +3,6 @@ import 'package:uri/uri.dart';
 
 import 'package:arrow/src/request.dart';
 import 'package:arrow/src/response.dart';
-import 'package:arrow/src/message.dart';
 import 'package:arrow/src/middleware.dart';
 import 'package:arrow/src/handler.dart';
 import 'package:arrow/src/request_middleware.dart';

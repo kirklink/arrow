@@ -2,21 +2,19 @@ import 'dart:async';
 
 import 'router.dart';
 import 'server.dart';
-import 'environment.dart';
 
 class Arrow {
   RouterBuilder _routerBuilder;
 
   Arrow(this._routerBuilder);
 
-  Future run<T extends Environment>(
+  Future run(
       {int port: 8080,
       bool forceSSL: false,
-      bool printRoutes: false,
-        T environment}) async {
+      bool printRoutes: false}) async {
     if (printRoutes) _printRoutes();
     Server server = Server(_routerBuilder(), port: port);
-    await server.start(forceSSL: forceSSL, environment: environment);
+    await server.start(forceSSL: forceSSL);
     return;
   }
 
