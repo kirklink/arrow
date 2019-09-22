@@ -1,4 +1,4 @@
-import 'package:bottom_line/bottom_line.dart';
+import 'package:bottom_line/getter_setter.dart';
 import 'package:arrow/src/environment.dart';
 
 class GlobalException implements Exception {
