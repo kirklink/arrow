@@ -8,8 +8,13 @@ class Server {
   int _port;
   Map<String, String> _env = Platform.environment;
 
-  bool get onProduction =>
-      _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
+  bool get onProduction {
+    if (_env['ARROW_ENVIRONMENT'] == null) {
+      throw Exception('ARROW_ENVIRONMENT should be "Production" for production or any other string if not on production.');
+    }
+    _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
+  }
+      
 
   Server(this._router, {int port}) {
     int p;
