@@ -12,7 +12,8 @@ class Server {
       _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
 
   Server(this._router, {int port}) {
-    var p = int.tryParse(_env['PORT']);
+    int p;
+    if (_env['PORT'] != null) p = int.tryParse(_env['PORT']);
     if (p == null && _env['PORT'] != null) {
       throw Exception(
           'Port provided from environment could not be converted to integer: ${_env['PORT']}');
