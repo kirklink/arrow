@@ -3,31 +3,17 @@
 **/.sass-cache/
 compass_app_log.txt
 
-# Rails-specific files #
-########################
-/.bundle
-/log/*.log
-/db/*.sqlite3
-/db/*.sqlite3-journal
-
-# CodeKit config files #
-########################
-config.codekit
-.codekit-cache/
-
 # Vagrant config files #
 ########################
 .vagrant/**
 
 # IDE config files #
 ####################
-# **/.idea/**
 **/.idea/workspace.xml
 **/.idea/tasks.xml
 **/.idea/usage.statistics.xml
 **/.idea/libraries/
 **/.idea/*.iml
-# **/.idea/*.iws
 
 
 # Anything with ‘secret’ should be secret #
@@ -84,18 +70,11 @@ Icon?
 ehthumbs.db
 Thumbs.db
 
-# Python #
-##########
-venv/
-
-# App Engine #
-##############
-# **/lib/
-
 # Dart #
 ########
-**/.pub
+.pub
 pubspec.lock
-**/build/
+build/
 .packages
-**/.dart_tool/
+.dart_tool/
+doc/

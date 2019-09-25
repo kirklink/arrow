@@ -18,8 +18,8 @@ class Server {
 
   Server(this._router, {int port}) {
     int p;
-    if (_env['PORT'] != null) p = int.tryParse(_env['PORT']);
-    if (p == null && _env['PORT'] != null) {
+    if (_env['ARROW_PORT'] != null) p = int.tryParse(_env['ARROW_PORT']);
+    if (p == null && _env['ARROW_PORT'] != null) {
       throw Exception(
           'Port provided from environment could not be converted to integer: ${_env['PORT']}');
     }
