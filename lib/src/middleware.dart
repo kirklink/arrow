@@ -2,21 +2,30 @@ import 'package:arrow/src/handler.dart';
 import 'package:arrow/src/request_middleware.dart';
 import 'package:arrow/src/response_middleware.dart';
 
-/// A process performed on a [Request] before a [Handler], a [RequestMiddleware], and/or on a [Response]
-/// after a [Handler], a [ResponseMiddleware]. A [Handler] can also be provided in case of an error in
-/// the Middleware execution.
+/// A process performed on a [Request] before a [Handler] (a [RequestMiddleware]) and/or on a [Response]
+/// after a [Handler] (a [ResponseMiddleware]). 
+/// 
+/// A [Handler] can also be provided in case of an error in the Middleware execution.
 /// 
 /// [Middleware] is added to a [Request]/[Response] [Pipeline] and can be synchronous
-/// where [useParallel] is false or asynchronous where [useParallel] is true. Middleware
-/// can also be forced to run with [useAlways] set to true; this is helpful for Middleware
+/// where [useParallel] is false or asynchronous where [useParallel] is [true]. Middleware
+/// can be forced to run when [useAlways] is set to [true]; this is helpful for Middleware
 /// such as loggers, which should always run regardles of the Request/Response status.
 /// 
-/// Middleware are run in the following order:
+/// Middleware are executed in the following order:
 /// 1. Synchronous [RequestMiddleware] in the order they are added to the [Router]
-/// 2. Asynchronous [RequestMiddleware] until they are all completed
+/// 2. Asynchronous [RequestMiddleware] asynchronously until they are all completed
 /// 3. The request [Handler] which initiates the response
-/// 4. Asynchronous [ResponseMiddleware] until they are all completed
+/// 4. Asynchronous [ResponseMiddleware] asynchronously until they are all completed
 /// 5. Synchronous [ResponseMiddleware] in the reverse order they are added to the [Router]
+/// 
+/// Synchronous Middleware are not guaranteed to run if a prior Middleware aborts the
+/// Request/Response and [useAlways] is false. Asynchronous Middleware are not guaranteed
+/// to run if a sibling asynchronous Middleware finishes first and aborts the Request/Response.
+/// Asynchronous Middleware may complete in any order so they should be used carefully;
+/// generally not to modify the Request/Response if other asynchronous Middleware depend
+/// on the modification or to spawn related but independent processes such as storing a request
+/// count to a database or retrieving multiple services a handler might depend on.
 class Middleware {
   RequestMiddleware _preProcess;
   ResponseMiddleware _postProcess;
