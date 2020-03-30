@@ -7,12 +7,21 @@ class Server {
   Router _router;
   int _port;
   Map<String, String> _env = Platform.environment;
+  bool _onProduction;
 
+  
+  bool _isOnProduction() {
+    if (_onProduction == null) {
+      if (_env['ARROW_ENVIRONMENT'] == null) {
+        throw Exception('ARROW_ENVIRONMENT should be "Production" for production or any other string if not on production.');
+      }
+      _onProduction = _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
+      }
+    return _onProduction;
+  }
+  
   bool get onProduction {
-    if (_env['ARROW_ENVIRONMENT'] == null) {
-      throw Exception('ARROW_ENVIRONMENT should be "Production" for production or any other string if not on production.');
-    }
-    return _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
+    return _isOnProduction();
   }
       
 
