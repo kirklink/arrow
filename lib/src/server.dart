@@ -12,7 +12,7 @@ class Server {
     if (_env['ARROW_ENVIRONMENT'] == null) {
       throw Exception('ARROW_ENVIRONMENT should be "Production" for production or any other string if not on production.');
     }
-    _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
+    return _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
   }
       
 
