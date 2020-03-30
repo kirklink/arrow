@@ -1,8 +1,12 @@
-import 'package:bottom_line/uuid4.dart';
-import 'package:bottom_line/locker.dart';
+import 'package:arrow/src/locker.dart';
+import 'package:uuid/uuid.dart';
+import 'package:uuid/uuid_util.dart';
 
 class Context<T> extends Locker<T> {
   static makeKey() {
-    return Uuid4();
+    final uuid = Uuid(options: {
+      'gnrg' : UuidUtil.cryptoRNG()
+    });
+    return uuid;
   }
 }
