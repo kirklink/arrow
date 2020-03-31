@@ -12,11 +12,15 @@ class Server {
   
   bool _isOnProduction() {
     if (_onProduction == null) {
-      if (_env['ARROW_ENVIRONMENT'] == null) {
-        throw Exception('ARROW_ENVIRONMENT should be "Production" for production or any other string if not on production.');
-      }
-      _onProduction = _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
-      }
+      // if (_env['ARROW_ENVIRONMENT'] == null) {
+      //   throw Exception('ARROW_ENVIRONMENT should be "Production" for production or any other string if not on production.');
+      // }
+      if (_env['ARROW_ENVIRONMENT'] != null) {
+        _onProduction = _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
+      } else {
+        _onProduction = false;
+      }  
+    }
     return _onProduction;
   }
   

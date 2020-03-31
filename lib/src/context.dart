@@ -3,10 +3,10 @@ import 'package:uuid/uuid.dart';
 import 'package:uuid/uuid_util.dart';
 
 class Context<T> extends Locker<T> {
-  static makeKey() {
+  static String makeKey() {
     final uuid = Uuid(options: {
       'gnrg' : UuidUtil.cryptoRNG()
-    });
+    }).v4();
     return uuid;
   }
 }
