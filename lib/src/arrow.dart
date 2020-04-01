@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'router.dart';
 import 'server.dart';
@@ -15,9 +16,19 @@ class Arrow {
   Future run(Router router,
       {int port: 8080,
       bool forceSSL: false,
-      bool printRoutes: false}) async {
+      bool printRoutes: false,
+      bool useEnvPORT: false}) async {
     if (printRoutes) _printRoutes(router);
-    Server server = Server(router, port: port);
+    var suppliedPort = port;
+    int envPortInt;
+    if (useEnvPORT) {
+      var envPort = Platform.environment['PORT'];
+      envPortInt = int.tryParse(envPort);
+    }
+    if (envPortInt != null) {
+      suppliedPort = envPortInt;
+    }
+    Server server = Server(router, port: suppliedPort);
     await server.start(forceSSL: forceSSL);
     return;
   }
