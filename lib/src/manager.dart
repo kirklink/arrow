@@ -19,7 +19,7 @@ class Messenger {
 class ResponseParts {
   int _statusCode;
   io.ContentType _contentType = io.ContentType.json;
-  String _body;
+  Map<String, Object> _body;
   Uri _redirect;
 }
 
@@ -115,14 +115,14 @@ class Manager {
   }
 
   void _writeToJson(Map<String, Object> message) {
-    _responseParts._body = (jsonEncode(_wrapResponse(message)));
+    _responseParts._body = (message);
   }
 
   void complete() {
     _innerRequest.response.headers.contentType = _responseParts._contentType;
     _innerRequest.response.statusCode = _responseParts._statusCode;
     if (_responseParts._body.isNotEmpty) {
-      _innerRequest.response.write(_responseParts._body);
+      _innerRequest.response.write(jsonEncode(_wrapResponse(_responseParts._body)));
     }
   }
 
