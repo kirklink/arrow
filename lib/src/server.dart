@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'router.dart';
 import 'request.dart';
+import 'response.dart';
 
 class Server {
   Router _router;
@@ -47,19 +48,20 @@ class Server {
   }
 
   Future start({bool forceSSL: false}) async {
-    var _server = await HttpServer.bind(InternetAddress.anyIPv4, _port);
+    final _server = await HttpServer.bind(InternetAddress.anyIPv4, _port);
     if (!onProduction) print(
         'Server listening on localhost, port ${_server.port}');
     await for (HttpRequest req in _server) {
-      var reqUri = req.requestedUri;
+      final reqUri = req.requestedUri;
       if (onProduction && forceSSL && reqUri.scheme != 'https') {
         req.response.redirect(
             Uri.https(reqUri.authority, reqUri.path, reqUri.queryParameters),
             status: HttpStatus.movedPermanently);
       } else {
         try {
-          var r = Request(req);
-          await _router.serve(r).then((res) {
+          final r = Request(req);
+          await _router.serve(r).then((Response res) {
+            res.manager.complete();
             req.response.close();
           });
         } catch (e) {

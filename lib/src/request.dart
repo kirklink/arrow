@@ -31,8 +31,8 @@ class Request extends Message {
     _content = content;
   }
 
-  Response respond({String wrapper, bool wrapped}) {
-    return Response(this, wrapper: wrapper, wrapped: wrapped);
+  Response respond({String wrapper: 'data', bool isWrapped: true}) {
+    return Response(this, wrapper: wrapper, wrapped: isWrapped);
   }
 
   void cancel() {

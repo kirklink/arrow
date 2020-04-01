@@ -20,11 +20,11 @@ Future<Request> readJsonContent(Request req) async {
       var res = req.respond();
       res.manager.errorMessages.add(
           '[readJsonContent] Could not decode bad json format in request.');
-      res.send.badRequest(message: 'Bad json formatting.');
+      res.send.badRequest(errors: {'msg': 'Bad json formatting.'});
     } catch (e) {
       var res = req.respond();
       res.manager.errorMessages.add('[readJsonContent] $e');
-      res.send.badRequest(message: 'Problem reading json.');
+      res.send.badRequest(errors: {'msg': 'Problem reading json.'});
     } finally {
       return req;
     }
