@@ -17,8 +17,8 @@ class Responder {
     _manager.setSuccess(message);
   }
 
-  void success() {
-    _manager.setSuccess({});
+  void success({int statusCode}) {
+    _manager.setSuccess({}, statusCode: statusCode);
   }
 
   void unauthorized() {
