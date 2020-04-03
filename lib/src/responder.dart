@@ -19,8 +19,9 @@ class Responder {
     return _response;
   }
 
-  void success({int statusCode}) {
+  Response success({int statusCode}) {
     _manager.setSuccess({}, statusCode: statusCode);
+    return _response;
   }
 
   Response unauthorized() {
