@@ -9,7 +9,7 @@ class Response extends Message {
 
   Response(Request req, {String wrapper, bool wrapped})
       : super(req.innerRequest, manager: req.manager, context: req.context) {
-    _responder = Responder(manager, wrapped, wrapper);
+    _responder = Responder(this, manager, wrapped, wrapper);
   }
 
   bool get isOnProd => io.Platform.environment['ARROW_ENVIRONMENT'] == 'production';

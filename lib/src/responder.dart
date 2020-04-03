@@ -1,44 +1,52 @@
 import 'dart:io';
 
-
+import 'package:arrow/src/response.dart';
 import 'package:arrow/src/manager.dart';
 
 class Responder {
 
   Manager _manager;
+  Response _response;
   
-  Responder(this._manager, bool isWrapped, String wrapper) {
+  Responder(this._response, this._manager, bool isWrapped, String wrapper) {
     _manager.setWrapper(isWrapped, wrapper);
   }
 
   int get statusCode => _manager.statusCode;
 
-  void ok(Map<String, Object> message) {
+  Response ok(Map<String, Object> message) {
     _manager.setSuccess(message);
+    return _response;
   }
 
-  void success() {
+  Response success() {
     _manager.setSuccess({});
+    return _response;
   }
 
-  void unauthorized() {
+  Response unauthorized() {
     _manager.setError(HttpStatus.unauthorized);
+    return _response;
   }
 
-  void notFound() {
+  Response notFound() {
     _manager.setError(HttpStatus.notFound);
+    return _response;
   }
 
-  void badRequest({Map<String, Object> errors}) {
+  Response badRequest({Map<String, Object> errors}) {
     _manager.setError(HttpStatus.badRequest, errors: errors ?? {});
+    return _response;
   }
 
-  void serverError() {
+  Response serverError() {
     _manager.setError(HttpStatus.internalServerError);
+    return _response;
   }
 
-  void redirect(Uri location, {bool permanent:false}) {
+  Response redirect(Uri location, {bool permanent:false}) {
     _manager.setRedirect(location, permanent);
+    return _response;
   }
 
 }
