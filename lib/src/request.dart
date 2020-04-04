@@ -10,7 +10,7 @@ class Request extends Message {
   Parameters _params = Parameters();
   Content _content;
 
-  Request(HttpRequest innerRequest) : super(innerRequest) {}
+  Request(HttpRequest innerRequest) : super(innerRequest, true) {}
 
   // Convenience accessors.
   String get method => innerRequest.method;
@@ -21,8 +21,6 @@ class Request extends Message {
 
   Parameters get params => _params;
 
-  bool get isOnProd => Platform.environment['ARROW_ENVIRONMENT'] == 'production';
-
   // New functionality.
   Content get content => _content;
 
@@ -31,11 +29,7 @@ class Request extends Message {
     _content = content;
   }
 
-  Response respond({String wrapper: 'data', bool isWrapped: true}) {
-    return Response(this, wrapper: wrapper, wrapped: isWrapped);
-  }
+  Response get response => Response(this);
 
-  void cancel() {
-    manager.abort();
-  }
+
 }

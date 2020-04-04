@@ -7,23 +7,39 @@ class GetterSetterException implements Exception {
 }
 
 
-class Locker<T> {
+class GetterSetter<T> {
 
   Map<String, Object> _items = {};
 
   T set<T>(String key, T value) {
-    if (_items.containsKey(key)) return null;
+    if (_items.containsKey(key)) {
+      throw GetterSetterException('The key "$key" already exists.');
+    }
     _items[key] = value;
     return value;
   }
 
   T replace<T>(String key, T value) {
-    if (!_items.containsKey(key)) return null;
+    if (!_items.containsKey(key)) {
+      throw GetterSetterException('The key "$key" does not exist.');
+    };
+    _items[key] = value;
+    return value;
+  }
+
+  T setOrReplace<T>(String key, T value) {
     _items[key] = value;
     return value;
   }
 
   T get<T>(String key) {
+    if (!_items.containsKey(key)) {
+      throw GetterSetterException('The key "$key" does not exist.');
+    };
+    return _items[key];
+  }
+
+  T tryGet<T>(String key) {
     if (!_items.containsKey(key)) return null;
     return _items[key];
   }
@@ -37,6 +53,18 @@ class Locker<T> {
   }
 
   T delete<T>(String key) {
+    if (!_items.containsKey(key)) {
+      throw GetterSetterException('The key "$key" does not exist.');
+    };
+    if (_items.containsKey(key)) {
+      var i = get<T>(key);
+      _items.remove(key);
+      return i;
+    }
+    return null;
+  }
+
+  T tryDelete<T>(String key) {
     if (_items.containsKey(key)) {
       var i = get<T>(key);
       _items.remove(key);
@@ -49,11 +77,4 @@ class Locker<T> {
     return _items.containsKey(key);
   }
 
-  void load(Map<String, Object> items) {
-    if (_items.isNotEmpty)
-      throw GetterSetterException('Can only load into an empty GetterSetter.');
-    for (var i in items.keys) {
-      set(i, items[i]);
-    }
-  }
 }

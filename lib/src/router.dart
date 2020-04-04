@@ -142,7 +142,7 @@ class Router {
   }
 
   Future<Response> _notFoundDefaultHandler(Request req) async {
-    var res = req.respond();
+    var res = req.response;
     res.send.notFound();
     return res;
   }
@@ -164,7 +164,7 @@ class Router {
     print('Stacktrace:');
     print(s);
     print('-- End Recover --');
-    var res = req.respond();
+    var res = req.response;
     res.send.serverError();
     return res;
   }

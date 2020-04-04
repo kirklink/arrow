@@ -1,11 +1,9 @@
-import 'package:arrow/src/locker.dart';
+import 'package:arrow/src/getterSetter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:uuid/uuid_util.dart';
 
 
-// TODO: Combine this with locker.dart
-
-class Context<T> extends Locker<T> {
+class Context<T> extends GetterSetter<T> {
   static String makeKey() {
     final uuid = Uuid(options: {
       'gnrg' : UuidUtil.cryptoRNG()

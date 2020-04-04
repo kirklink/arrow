@@ -1,7 +1,7 @@
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:arrow/src/context.dart';
-import 'package:arrow/src/manager.dart';
+import 'package:arrow/src/internal_messenger.dart';
 
 
 class MessageException implements Exception {
@@ -13,22 +13,29 @@ class MessageException implements Exception {
 }
 
 abstract class Message {
-  HttpRequest _innerRequest;
-  Manager _manager;
+  io.HttpRequest _innerRequest;
   Context _context;
+  InternalMessenger _messenger;
+  bool _isAlive;
 
 
-  Message(HttpRequest this._innerRequest, {Manager manager, Context context}) {
-    _manager = manager != null ? manager : Manager(_innerRequest);
-    _context = context != null ? context : Context();
+  Message(this._innerRequest, this._isAlive, [InternalMessenger messenger, Context context]) {
+    _messenger = messenger ?? InternalMessenger;
+    _context = context ?? Context();
   }
 
-  HttpRequest get innerRequest => _innerRequest;
+  io.HttpRequest get innerRequest => _innerRequest;
 
   Context get context => _context;
 
-  Manager get manager => _manager;
+  InternalMessenger get messenger => _messenger;
 
-  bool get isAlive => _manager != null ? _manager.isAlive : false;
+  bool get isOnProd => io.Platform.environment['ARROW_ENVIRONMENT'] == 'production';
+
+  bool get isAlive => _isAlive;
+
+  void cancel() {
+    _isAlive = false;
+  }
 
 }

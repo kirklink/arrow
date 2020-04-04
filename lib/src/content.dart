@@ -1,6 +1,5 @@
 import 'dart:convert' show json;
 
-// TODO: just make this handle json only
 
 class ContentException implements Exception {
   String cause;
@@ -10,10 +9,7 @@ class ContentException implements Exception {
 
 abstract class Content {
   String get string;
-
   Map<String, Object> get map;
-
-  String encode();
 }
 
 class JsonContent implements Content {
@@ -23,12 +19,8 @@ class JsonContent implements Content {
     _content = json.decode(content);
   }
 
-  String get string => null;
+  String get string => json.encode(_content);
 
   Map<String, Object> get map => _content;
-
-  String encode() {
-    return json.encode(_content);
-  }
 
 }

@@ -91,7 +91,7 @@ class Pipeline {
     if (req.isAlive) {
       res = await endpoint(req);
     } else {
-      res = req.respond();
+      res = req.response;
     }
     ;
 

@@ -61,7 +61,7 @@ class Server {
         try {
           final r = Request(req);
           await _router.serve(r).then((Response res) {
-            res.manager.complete();
+            res.complete();
             req.response.close();
           });
         } catch (e) {

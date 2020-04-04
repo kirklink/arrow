@@ -2,53 +2,52 @@ import 'dart:io';
 
 import 'package:arrow/src/response.dart';
 import 'package:arrow/src/manager.dart';
+import 'package:arrow/src/response_object.dart';
 
 // TODO: provide some more flexibility in responses
 // TODO: create a response object (between here and manager) to standardize output`
 
 class Responder {
 
-  Manager _manager;
   Response _response;
+  ResponseObject _responseObject;
   
-  Responder(this._response, this._manager, bool isWrapped, String wrapper) {
-    _manager.setWrapper(isWrapped, wrapper);
-  }
+  Responder(this._response);
 
-  int get statusCode => _manager.statusCode;
-
-  Response ok(Map<String, Object> message) {
-    _manager.setSuccess(message);
+  Response ok(Map<String, Object> data) {
+    _responseObject = ArrowResponse.ok(200, data);
     return _response;
   }
 
-  Response success({int statusCode}) {
-    _manager.setSuccess({}, statusCode: statusCode);
+  Response code(int statusCode) {
+    _responseObject = ArrowResponse.codeOnly(statusCode);
     return _response;
   }
 
   Response unauthorized() {
-    _manager.setError(HttpStatus.unauthorized);
+    _responseObject = ArrowResponse.error(HttpStatus.unauthorized, 'Unauthorized', {});
     return _response;
   }
 
   Response notFound() {
-    _manager.setError(HttpStatus.notFound);
+    _responseObject = ArrowResponse.error(HttpStatus.notFound, 'Not Found', {});
     return _response;
   }
 
-  Response badRequest({Map<String, Object> errors}) {
-    _manager.setError(HttpStatus.badRequest, errors: errors ?? {});
+  Response badRequest({String msg, Map<String, Object> errors}) {
+    final m = msg ?? 'Bad Request';
+    final e = errors ?? {};
+    _responseObject = ArrowResponse.error(HttpStatus.badRequest, m, e);
     return _response;
   }
 
   Response serverError() {
-    _manager.setError(HttpStatus.internalServerError);
+    _responseObject = ArrowResponse.error(HttpStatus.internalServerError, 'Server Error', {});
     return _response;
   }
 
-  Response redirect(Uri location, {bool permanent:false}) {
-    _manager.setRedirect(location, permanent);
+  Response redirect(Object location, {bool permanent: true}) {
+    _responseObject = ArrowResponse.redirect(location, permanent);
     return _response;
   }
 

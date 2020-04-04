@@ -8,31 +8,11 @@ class ResponseManagerException implements Exception {
   ResponseManagerException(this.cause);
 }
 
-class Messenger {
-  List<String> _messages = List<String>();
-  List<String> get list => _messages;
-  String get string => _messages.join(' | ');
 
-  add(String message) {
-    _messages.add(message);
-  }
-}
 
-class ResponseParts {
-  int _statusCode;
-  io.ContentType _contentType = io.ContentType.json;
-  Map<String, Object> _body;
-  Uri _redirect;
-}
 
 class Manager {
-  bool _isAlive = true;
-  io.HttpRequest _innerRequest;
-  final Messenger messages = Messenger();
-  final Messenger errorMessages = Messenger();
-  ResponseParts _responseParts = ResponseParts();
-  bool _isWrapped;
-  String _wrapper;
+
 
   Manager(io.HttpRequest this._innerRequest) {
     _innerRequest.response.done.whenComplete(() {
