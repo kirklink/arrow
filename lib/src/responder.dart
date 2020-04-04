@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:arrow/src/response.dart';
 import 'package:arrow/src/manager.dart';
 
+// TODO: provide some more flexibility in responses
+// TODO: create a response object (between here and manager) to standardize output`
+
 class Responder {
 
   Manager _manager;

@@ -1,6 +1,8 @@
 import 'dart:io' as io;
 import 'dart:convert' show jsonEncode;
 
+// TODO: make sure this makes sense overall and split it up
+
 class ResponseManagerException implements Exception {
   String cause;
   ResponseManagerException(this.cause);

@@ -1,5 +1,7 @@
 import 'dart:convert' show json;
 
+// TODO: just make this handle json only
+
 class ContentException implements Exception {
   String cause;
 
