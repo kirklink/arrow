@@ -101,14 +101,14 @@ class Responder {
     if (ResponseObject == null) {
       throw ResponseObjectException('A response has not been created.');
     }
-       
     if (_responseObject.location != null) {
       _response.innerRequest.response.statusCode = _responseObject.statusCode;
       _response.innerRequest.response.redirect(_responseObject.location);
     } else if (_responseObject.body != null) {
-      _response.innerRequest.response.statusCode = _responseObject.statusCode;
       _response.innerRequest.response.headers.set(io.HttpHeaders.contentTypeHeader, 'application/json');
       _response.innerRequest.response.write(_responseObject.body);
+    } else if (_responseObject.body == null) {
+      _response.innerRequest.response.statusCode = _responseObject.statusCode;      
     } else {
       _response.innerRequest.response.statusCode = io.HttpStatus.internalServerError;
     }
