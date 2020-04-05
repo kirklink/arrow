@@ -105,7 +105,7 @@ class Responder {
     _response.innerRequest.response.statusCode = _responseObject.statusCode;
     if (_responseObject.location != null) {
       _response.innerRequest.response.redirect(_responseObject.location);
-    } else {
+    } else if (_responseObject.body != null) {
       _response.innerRequest.response.write(_responseObject.body);
     }
     await _response.innerRequest.response.close();
