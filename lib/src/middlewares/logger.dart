@@ -39,16 +39,16 @@ RequestMiddleware loggerIn() {
 }
 
 String _messages(Response res, bool isOn) {
-  if (res.manager.messages.list.length > 0 && isOn) {
-    return '\nMessages: ${res.manager.messages.string}';
+  if (res.messenger.messages.length > 0 && isOn) {
+    return '\nMessages: ${res.messenger.messages.join(' | ')}';
   } else {
     return '';
   }
 }
 
 String _errorMessages(Response res, bool isOn) {
-  if (res.manager.errorMessages.list.length > 0 && isOn) {
-    return '\nError messages: ${res.manager.errorMessages.string}';
+  if (res.messenger.errors.length > 0 && isOn) {
+    return '\nError messages: ${res.messenger.errors.join(' | ')}';
   } else {
     return '';
   }
@@ -61,10 +61,10 @@ ResponseMiddleware loggerOut({Logger logger: null, bool messages: false}) {
     log.end();
     if (res.statusCode < 200 || res.statusCode > 299) {
       logger(
-          '[ERROR] ${res.statusCode.toString()} ${log.message()}${_messages(res, messages)}${_errorMessages(res, messages)}');
+          '[ERROR] ${res.statusCode} ${log.message()}${_messages(res, messages)}${_errorMessages(res, messages)}');
     } else {
       logger(
-          '${res.statusCode.toString()} ${log.message()}${_messages(res, messages)}');
+          '${res.statusCode} ${log.message()}${_messages(res, messages)}');
     }
     return res;
   };

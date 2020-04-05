@@ -9,8 +9,9 @@ import 'package:arrow/src/content.dart';
 class Request extends Message {
   Parameters _params = Parameters();
   Content _content;
+  Response _response;
 
-  Request(HttpRequest innerRequest) : super(innerRequest, true) {}
+  Request(HttpRequest innerRequest) : super(innerRequest);
 
   // Convenience accessors.
   String get method => innerRequest.method;
@@ -24,12 +25,21 @@ class Request extends Message {
   // New functionality.
   Content get content => _content;
 
+  // Alive get alive => _alive;
+
   set content(Content content) {
     if (_content != null) throw ContentException('Content is already loaded.');
     _content = content;
   }
 
-  Response get response => Response(this);
+  Response get response {
+    if (_response == null) {
+      _response = Response(this);
+      return _response;
+    } else {
+      return _response;
+    }
+  }
 
 
 }

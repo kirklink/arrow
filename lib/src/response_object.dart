@@ -1,4 +1,5 @@
 import 'dart:io' as io;
+import 'dart:convert' show json;
 
 class ResponseObjectException implements Exception {
   String cause;
@@ -6,31 +7,53 @@ class ResponseObjectException implements Exception {
   ResponseObjectException(this.cause);
 }
 
+// class ResponseObjectResult {
+//   final String body;
+//   final int statusCode;
+//   final io.ContentType contentType;
+//   Uri _location;
 
-abstract class ResponseObject {
+//   Uri get location => _location;
+
+//   ResponseObjectResult(this.body, this.statusCode, this.contentType, {Uri location}) {
+//     _location = location;
+//   }
+// }
+
+
+class ResponseObject {
 
   int _statusCode;
-  bool _ok;
-  Map<String, Object> _data;
-  String _errorMsg;
-  Map<String, String> _errors;
-  io.ContentType _contentType;
+  String _body;
   Uri _uri;
 
+  int get statusCode => _statusCode;
+  String get body => _body;
+  Uri get location => _uri;
 
-  ResponseObject._ok(this._statusCode, this._data) {
-    _ok = _statusCode >= 200 || _statusCode <= 299;
-    if (!_ok) {
+
+  ResponseObject.ok(this._statusCode, Map<String, Object> data) {
+    if (_statusCode < 200 || _statusCode > 299) {
       throw ResponseObjectException('Response cannot be "ok" with status code $_statusCode.');
     }
+    _body = json.encode({
+      "ok": true,
+      "data": data
+    });
   }
-  ResponseObject._error(this._statusCode, this._errorMsg, this._errors) {
-    _ok = _statusCode < 200 || _statusCode >= 400;
-    if (_ok) {
+  
+  ResponseObject.error(this._statusCode, String errorMsg, Map<String, String> errors) {
+    if (_statusCode > 200 && _statusCode < 400) {
       throw ResponseObjectException('Response must be "ok" with status code $_statusCode.');
     }
+    _body = json.encode({
+      "ok": false,
+      "message": errorMsg,
+      "errors": errors
+    });
   }
-  ResponseObject._redirect(bool permanent, Object uri) {
+  
+  ResponseObject.redirect(bool permanent, Object uri) {
     if (uri is String) {
       _uri = Uri.parse(uri);
     } else if (uri is Uri) {
@@ -38,35 +61,19 @@ abstract class ResponseObject {
     } else {
       throw ResponseObjectException('uri must be a string or uri object.');
     }
-    _ok = true;
     if (permanent) {
       _statusCode = 301;
     } else {
       _statusCode = 302;
     }
   }
-  ResponseObject._codeOnly(this._statusCode);
-
   
   
+  ResponseObject.codeOnly(this._statusCode);
 
 
 }
 
 
-class ArrowResponse extends ResponseObject {
-  
-  io.ContentType _contentType = io.ContentType.json;
-
-  ArrowResponse.ok(int statusCode, Map<String, Object> data)
-     : super._ok(statusCode, data);
-  ArrowResponse.error(int statusCode, String msg, Map<String, Object> errors)
-     : super._error(statusCode, msg, errors);
-  ArrowResponse.redirect(bool permanent, Object uri)
-     : super._redirect(permanent, uri);
-  ArrowResponse.codeOnly(int statusCode) : super._codeOnly(statusCode);
-  
-
-}
 
 

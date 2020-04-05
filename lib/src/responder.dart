@@ -1,11 +1,16 @@
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:arrow/src/response.dart';
-import 'package:arrow/src/manager.dart';
 import 'package:arrow/src/response_object.dart';
 
 // TODO: provide some more flexibility in responses
 // TODO: create a response object (between here and manager) to standardize output`
+
+class ResponderException implements Exception {
+  String cause;
+  ResponderException(this.cause);
+}
+
 
 class Responder {
 
@@ -14,41 +19,96 @@ class Responder {
   
   Responder(this._response);
 
-  Response ok(Map<String, Object> data) {
-    _responseObject = ArrowResponse.ok(200, data);
+  bool get isComplete => _responseObject != null;
+  int get statusCode => _responseObject.statusCode;
+
+  Response ok([Map<String, Object> data]) {
+    if (_responseObject != null) {
+      throw ResponderException('The response object has already been created.');
+    }
+    final code = _getSuccessCode();
+    _responseObject = ResponseObject.ok(code, data);
     return _response;
   }
 
   Response code(int statusCode) {
-    _responseObject = ArrowResponse.codeOnly(statusCode);
+    if (_responseObject != null) {
+      throw ResponderException('The response object has already been created.');
+    }
+    _responseObject = ResponseObject.codeOnly(statusCode);
     return _response;
   }
 
   Response unauthorized() {
-    _responseObject = ArrowResponse.error(HttpStatus.unauthorized, 'Unauthorized', {});
+    if (_responseObject != null) {
+      throw ResponderException('The response object has already been created.');
+    }
+    _responseObject = ResponseObject.error(io.HttpStatus.unauthorized, 'Unauthorized', <String, String>{});
+    _response.cancel();
     return _response;
   }
 
   Response notFound() {
-    _responseObject = ArrowResponse.error(HttpStatus.notFound, 'Not Found', {});
+    if (_responseObject != null) {
+      throw ResponderException('The response object has already been created.');
+    }
+    _responseObject = ResponseObject.error(io.HttpStatus.notFound, 'Not Found', <String, String>{});
+    _response.cancel();
     return _response;
   }
 
   Response badRequest({String msg, Map<String, Object> errors}) {
+    if (_responseObject != null) {
+      throw ResponderException('The response object has already been created.');
+    }
     final m = msg ?? 'Bad Request';
-    final e = errors ?? {};
-    _responseObject = ArrowResponse.error(HttpStatus.badRequest, m, e);
+    final e = errors ?? <String, String>{};
+    _responseObject = ResponseObject.error(io.HttpStatus.badRequest, m, e);
+    _response.cancel();
     return _response;
   }
 
   Response serverError() {
-    _responseObject = ArrowResponse.error(HttpStatus.internalServerError, 'Server Error', {});
+    if (_responseObject != null) {
+      throw ResponderException('The response object has already been created.');
+    }
+    _responseObject = ResponseObject.error(io.HttpStatus.internalServerError, 'Server Error', <String, String>{});
+    _response.cancel();
     return _response;
   }
 
   Response redirect(Object location, {bool permanent: true}) {
-    _responseObject = ArrowResponse.redirect(location, permanent);
+    if (_responseObject != null) {
+      throw ResponderException('The response object has already been created.');
+    }
+    _responseObject = ResponseObject.redirect(location, permanent);
+    _response.cancel();
     return _response;
+  }
+
+
+  int _getSuccessCode() {
+    if (_response.innerRequest.method == 'POST') {
+    return io.HttpStatus.created;
+    } else if (_response.innerRequest.method == 'DELETE') {
+      return io.HttpStatus.ok;
+    } else {
+      return io.HttpStatus.ok;
+    }
+  }
+
+  Future complete() async {
+    if (ResponseObject == null) {
+      throw ResponseObjectException('A response has not been created.');
+    }
+    _response.innerRequest.response.headers.set(io.HttpHeaders.contentTypeHeader, 'application/json');
+    _response.innerRequest.response.statusCode = _responseObject.statusCode;
+    if (_responseObject.location != null) {
+      _response.innerRequest.response.redirect(_responseObject.location);
+    } else {
+      _response.innerRequest.response.write(_responseObject.body);
+    }
+    await _response.innerRequest.response.close();
   }
 
 }

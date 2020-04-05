@@ -12,30 +12,43 @@ class MessageException implements Exception {
   String toString() => 'MessageException: $message';
 }
 
+class Alive {
+  bool _isAlive = true;
+
+  Alive();
+
+  bool get isAlive => _isAlive;
+
+  void kill() {
+    _isAlive = false;
+  }
+}
+
 abstract class Message {
   io.HttpRequest _innerRequest;
   Context _context;
   InternalMessenger _messenger;
-  bool _isAlive;
+  Alive _alive;
 
 
-  Message(this._innerRequest, this._isAlive, [InternalMessenger messenger, Context context]) {
-    _messenger = messenger ?? InternalMessenger;
+  Message(this._innerRequest, [InternalMessenger messenger, Context context, Alive alive]) {
+    _messenger = messenger ?? InternalMessenger();
     _context = context ?? Context();
+    _alive = alive ?? Alive();
   }
 
   io.HttpRequest get innerRequest => _innerRequest;
 
   Context get context => _context;
-
+  Alive get alive => _alive;
   InternalMessenger get messenger => _messenger;
 
   bool get isOnProd => io.Platform.environment['ARROW_ENVIRONMENT'] == 'production';
 
-  bool get isAlive => _isAlive;
+  bool get isAlive => _alive.isAlive;
 
   void cancel() {
-    _isAlive = false;
+    _alive.kill();
   }
 
 }

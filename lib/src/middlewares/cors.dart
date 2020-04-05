@@ -144,9 +144,8 @@ class Cors {
 
 Request handlePreFlight(Request req, Cors cors) {
   if (req.method != 'OPTIONS') {
-    var res = req.respond();
-    res.manager.errorMessages
-        .add('[cors] Preflight aborted. ${req.method}!="OPTIONS');
+    var res = req.response;
+    res.messenger.addError(('[cors] Preflight aborted. ${req.method}!="OPTIONS'));
     res.send.serverError();
     return req;
   }
@@ -159,25 +158,23 @@ Request handlePreFlight(Request req, Cors cors) {
 
   final origin = req.headers.value('Origin');
   if (origin == null || origin == '') {
-    var res = req.respond();
-    res.manager.errorMessages.add('[cors] Preflight aborted. Empty origin.');
+    var res = req.response;
+    res.messenger.addError('[cors] Preflight aborted. Empty origin.');
     res.send.badRequest();
     return req;
   }
 
   if (!cors.isAllowedOrigin(origin)) {
-    var res = req.respond();
-    res.manager.errorMessages
-        .add('[cors] Preflight aborted. Not an allowed origin.');
+    var res = req.response;
+    res.messenger.addError('[cors] Preflight aborted. Not an allowed origin.');
     res.send.badRequest();
     return req;
   }
 
   final method = req.headers.value('Access-Control-Request-Method');
   if (method == null || !cors.isAllowedMethod(method)) {
-    var res = req.respond();
-    res.manager.errorMessages
-        .add('[cors] Preflight aborted. Not an allowed method.');
+    var res = req.response;
+    res.messenger.addError('[cors] Preflight aborted. Not an allowed method.');
     res.send.badRequest();
     return req;
   }
@@ -192,9 +189,8 @@ Request handlePreFlight(Request req, Cors cors) {
   }
 
   if (parsedHeaders.length == 0 || !cors.areAllowedHeaders(parsedHeaders)) {
-    var res = req.respond();
-    res.manager.errorMessages
-        .add('[cors] Preflight aborted. Not an allowed header.');
+    var res = req.response;
+    res.messenger.addError('[cors] Preflight aborted. Not an allowed header.');
     res.send.badRequest();
     return req;
   }
@@ -228,24 +224,22 @@ Request handleActualRequest(Request req, Cors cors) {
   final origin = req.headers.value('Origin');
 
   if (origin == null || origin == '') {
-    var res = req.respond();
-    res.manager.errorMessages
-        .add('[cors] Actual request aborted. Empty origin.');
+    var res = req.response;
+    res.messenger.addError('[cors] Actual request aborted. Empty origin.');
     res.send.badRequest();
     return req;
   }
 
   if (!cors.isAllowedOrigin(origin)) {
-    var res = req.respond();
-    res.manager.errorMessages
-        .add('[cors] Actual request aborted. Not an allowed origin: $origin');
+    var res = req.response;
+    res.messenger.addError('[cors] Actual request aborted. Not an allowed origin: $origin');
     res.send.badRequest();
     return req;
   }
 
   if (!cors.isAllowedMethod(req.method)) {
-    var res = req.respond();
-    res.manager.errorMessages.add(
+    var res = req.response;
+    res.messenger.addError(
         '[cors] Actual request aborted. Not an allowed method: ${req.method}');
     res.send.badRequest();
     return req;

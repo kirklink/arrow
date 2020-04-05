@@ -6,7 +6,7 @@ class Response extends Message {
   Responder _responder;
 
   Response(Request req)
-      : super(req.innerRequest, req.isAlive, req.messenger, req.context) {
+      : super(req.innerRequest, req.messenger, req.context, req.alive) {
     _responder = Responder(this);
   }
 
@@ -15,6 +15,10 @@ class Response extends Message {
   Responder get send => _responder;
 
   int get statusCode => _responder.statusCode;
+
+  Future complete() async {
+    await _responder.complete();
+  }
 
 
 

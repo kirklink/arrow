@@ -92,8 +92,7 @@ class Pipeline {
       res = await endpoint(req);
     } else {
       res = req.response;
-    }
-    ;
+    };
 
     res = await _processPostParallel(res, _parallelPostHandlers);
 
