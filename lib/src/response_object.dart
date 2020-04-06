@@ -33,7 +33,7 @@ class ResponseObject {
     }
     _body = json.encode({
       "ok": false,
-      "message": errorMsg,
+      "errorMessage": errorMsg,
       "errors": errors
     });
   }
