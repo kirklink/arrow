@@ -1,4 +1,3 @@
-import 'dart:io' as io;
 import 'dart:convert' show json;
 
 class ResponseObjectException implements Exception {
@@ -6,20 +5,6 @@ class ResponseObjectException implements Exception {
 
   ResponseObjectException(this.cause);
 }
-
-// class ResponseObjectResult {
-//   final String body;
-//   final int statusCode;
-//   final io.ContentType contentType;
-//   Uri _location;
-
-//   Uri get location => _location;
-
-//   ResponseObjectResult(this.body, this.statusCode, this.contentType, {Uri location}) {
-//     _location = location;
-//   }
-// }
-
 
 class ResponseObject {
 
@@ -55,11 +40,15 @@ class ResponseObject {
   
   ResponseObject.redirect(bool permanent, Object uri) {
     if (uri is String) {
-      _uri = Uri.parse(uri);
+      try {
+        _uri = Uri.parse(uri);
+      } catch (e) {
+        throw ResponseObjectException('Could not parse uri: $uri.');
+      }
     } else if (uri is Uri) {
       _uri = uri;
     } else {
-      throw ResponseObjectException('uri must be a string or uri object.');
+      throw ResponseObjectException('uri must be a string or Uri object.');
     }
     if (permanent) {
       _statusCode = 301;
