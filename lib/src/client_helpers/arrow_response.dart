@@ -11,6 +11,10 @@ class ArrowResponse {
     _errors = serverResponse['errors'];
   }
 
+  bool get ok => _ok;
+  Map<String, Object> get data => _data;
+  String get errorMsg => _errorMsg;
+  Map<String, String> get errors => _errors;
 
 
 }
