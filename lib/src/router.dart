@@ -157,7 +157,7 @@ class Router {
     return _notFoundCustom;
   }
 
-  Response _defaultRecoverer(Request req, Error e, StackTrace s) {
+  Response _defaultRecoverer(Request req, Exception e, StackTrace s) {
     print('!! -- Recover -- !!');
     print('Message:');
     print(e);
