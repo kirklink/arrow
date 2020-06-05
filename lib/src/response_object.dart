@@ -17,14 +17,19 @@ class ResponseObject {
   Uri get location => _uri;
 
 
-  ResponseObject.ok(this._statusCode, Map<String, Object> data) {
+  ResponseObject.ok(this._statusCode, Map<String, Object> data, {bool wrapped = true}) {
     if (_statusCode < 200 || _statusCode > 299) {
       throw ResponseObjectException('Response cannot be "ok" with status code $_statusCode.');
     }
-    _body = json.encode({
-      "ok": true,
-      "data": data
-    });
+    if (wrapped) {
+      _body = json.encode({
+        "ok": true,
+        "data": data
+      });
+    } else {
+      _body = json.encode(data);
+    }
+    
   }
   
   ResponseObject.error(this._statusCode, String errorMsg, Map<String, String> errors) {

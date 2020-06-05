@@ -65,8 +65,12 @@ class Server {
             req.response.close();
           });
         } catch (e) {
-          if (!onProduction) print('!! -- Unrecovered Server error -- !!');
-          rethrow;
+          if (!onProduction) {
+            print('!! -- Unrecovered Server Error START -- !!');
+            print(e);
+            print('!! -- Unrecovered Server Error END -- !!');
+          }
+
         } finally {
           req.response.close();
         }

@@ -1,21 +1,3 @@
-# Sass and Compass Files #
-##########################
-**/.sass-cache/
-compass_app_log.txt
-
-# Vagrant config files #
-########################
-.vagrant/**
-
-# IDE config files #
-####################
-**/.idea/workspace.xml
-**/.idea/tasks.xml
-**/.idea/usage.statistics.xml
-**/.idea/libraries/
-**/.idea/*.iml
-
-
 # Anything with ‘secret’ should be secret #
 ###########################################
 **/secret

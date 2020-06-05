@@ -157,7 +157,7 @@ class Router {
     return _notFoundCustom;
   }
 
-  Response _defaultRecoverer(Request req, Exception e, StackTrace s) {
+  Response _defaultRecoverer(Request req, [Exception e, StackTrace s]) {
     print('!! -- Recover -- !!');
     print('Message:');
     print(e);
@@ -169,7 +169,7 @@ class Router {
     return res;
   }
 
-  void RECOVER({Recoverer recover}) {
+  void RECOVER([Recoverer recover]) {
     _recover = recover == null ? _defaultRecoverer : recover;
     return;
   }
@@ -203,6 +203,8 @@ class Router {
     Response res;
     try {
       res = await _serve(req);
+    } on Error {
+      return await _recover(req);
     } catch (e, s) {
       if (_recover == null) {
         rethrow;

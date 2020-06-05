@@ -26,6 +26,12 @@ class Responder {
     return _response;
   }
 
+  Response raw(int statusCode, Map<String, Object> data) {
+    _onlyOnce();
+    _responseObject = ResponseObject.ok(statusCode, data, wrapped: false);
+    return _response;
+  }
+
   Response code(int statusCode) {
     _onlyOnce();
     _responseObject = ResponseObject.codeOnly(statusCode);
