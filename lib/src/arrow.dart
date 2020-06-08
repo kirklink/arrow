@@ -37,4 +37,6 @@ class Arrow {
     router.printRoutes();
     return;
   }
+
+  static final bool isOnProduction = Platform.environment['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
 }
