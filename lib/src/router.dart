@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:html';
 import 'package:uri/uri.dart';
 
 import 'package:arrow/src/request.dart';
@@ -157,12 +158,14 @@ class Router {
     return _notFoundCustom;
   }
 
-  Response _defaultRecoverer(Request req, [Exception e, StackTrace s]) {
+  Response _defaultRecoverer(Request req, {Exception exception, StackTrace stacktrace, Error error}) {
     print('!! -- Recover -- !!');
-    print('Message:');
-    print(e);
+    print('Exception:');
+    print(exception);
+    print('Error:');
+    print(error);
     print('Stacktrace:');
-    print(s);
+    print(stacktrace);
     print('-- End Recover --');
     var res = req.response;
     res.send.serverError();
@@ -203,13 +206,13 @@ class Router {
     Response res;
     try {
       res = await _serve(req);
-    } on Error {
-      return await _recover(req);
+    } on Error catch (e, s) {
+      return await _recover(req, error: e, stacktrace: s);
     } catch (e, s) {
       if (_recover == null) {
         rethrow;
       } else {
-        return await _recover(req, e, s);
+        return await _recover(req, exception: e, stacktrace: s);
       }
     }
     if (res == null) {
