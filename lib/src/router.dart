@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:html';
 import 'package:uri/uri.dart';
 
 import 'package:arrow/src/request.dart';
