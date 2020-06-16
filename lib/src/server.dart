@@ -28,17 +28,18 @@ class Server {
   bool get onProduction {
     return _isOnProduction();
   }
-      
+        
 
   Server(this._router, {int port}) {
     int p;
-    if (_env['ARROW_PORT'] != null) p = int.tryParse(_env['ARROW_PORT']);
+    if (_env['ARROW_PORT'] != null) {
+      p = int.tryParse(_env['ARROW_PORT']);
+    };
     if (p == null && _env['ARROW_PORT'] != null) {
       throw Exception(
-          'Port provided from environment could not be converted to integer: ${_env['PORT']}');
+          'ARROW_PORT could not be converted to integer: ${_env['ARROW_PORT']}');
     }
     if (p != null) {
-//        print('Using port $p from environment.');
       this._port = p;
     } else if (port != null) {
       this._port = port;

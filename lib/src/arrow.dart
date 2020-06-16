@@ -39,4 +39,6 @@ class Arrow {
   }
 
   static final bool isOnProduction = Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'production';
+
+  static final environment = Platform.environment;
 }
