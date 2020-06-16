@@ -30,18 +30,8 @@ class Server {
   }
         
 
-  Server(this._router, {int port}) {
-    int p;
-    if (_env['ARROW_PORT'] != null) {
-      p = int.tryParse(_env['ARROW_PORT']);
-    };
-    if (p == null && _env['ARROW_PORT'] != null) {
-      throw Exception(
-          'ARROW_PORT could not be converted to integer: ${_env['ARROW_PORT']}');
-    }
-    if (p != null) {
-      this._port = p;
-    } else if (port != null) {
+  Server(this._router, int port) {
+    if (port != null) {
       this._port = port;
     } else {
       this._port = 8080;

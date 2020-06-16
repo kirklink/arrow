@@ -14,21 +14,11 @@ class Arrow {
 /// [forceSSL] to true will redirect all http requests to https. [printRoutes] prints 
 /// all the configured routes to stdout when the server starts.
   Future run(Router router,
-      {int port: 8080,
-      bool forceSSL: false,
-      bool printRoutes: false,
-      bool useEnvPORT: false}) async {
+      {int port = 8080,
+      bool forceSSL = false,
+      bool printRoutes = false}) async {
     if (printRoutes) _printRoutes(router);
-    var suppliedPort = port;
-    int envPortInt;
-    if (useEnvPORT) {
-      var envPort = Platform.environment['PORT'];
-      envPortInt = int.tryParse(envPort);
-    }
-    if (envPortInt != null) {
-      suppliedPort = envPortInt;
-    }
-    Server server = Server(router, port: suppliedPort);
+    Server server = Server(router, port);
     await server.start(forceSSL: forceSSL);
     return;
   }
