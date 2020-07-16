@@ -1,14 +1,18 @@
+import 'package:http/http.dart' show Response;
+import 'dart:convert' show json;
+
 class ArrowResponse {
   bool _ok;
   Map<String, Object> _data;
   String _errorMsg;
   Map<String, String> _errors;
 
-  ArrowResponse(Map<String, Object> serverResponse) {
-    _ok = serverResponse['ok'];
-    _data = serverResponse['data'];
-    _errorMsg = serverResponse['errorMessage'];
-    _errors = serverResponse['errors'];
+  ArrowResponse(Response serverResponse) {
+    final body = json.decode(serverResponse.body);
+    _ok = body['ok'];
+    _data = body['data'];
+    _errorMsg = body['errorMessage'];
+    _errors = body['errors'];
   }
 
   bool get ok => _ok;
