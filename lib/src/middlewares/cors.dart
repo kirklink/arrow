@@ -213,7 +213,7 @@ Request handlePreFlight(Request req, Cors cors) {
         .add('Access-Control-Max-Age', cors.maxAge.toString());
   }
 
-  req.innerRequest.response.statusCode = 200;
+  req.response.send.code(200);
   req.cancel();
   return req;
 }
