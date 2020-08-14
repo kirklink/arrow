@@ -100,6 +100,7 @@ class Responder {
     if (_responseObject.body != null) {
       srcResponse.headers.set(io.HttpHeaders.contentTypeHeader, 'application/json');
       srcResponse.write(_responseObject.body);
+      srcResponse.statusCode = _responseObject.statusCode;
     } else if (_responseObject.location != null) {
       srcResponse.statusCode = _responseObject.statusCode;
       srcResponse.redirect(_responseObject.location);
