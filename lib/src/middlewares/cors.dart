@@ -262,8 +262,10 @@ Request handleActualRequest(Request req, Cors cors) {
 
 RequestMiddleware CorsMiddleware(Cors config) {
   return (Request req) {
-    if (req.method == 'OPTIONS') return handlePreFlight(req, config);
-
-    return handleActualRequest(req, config);
+    if (req.method == 'OPTIONS') {
+     return handlePreFlight(req, config);
+    } else {
+      return handleActualRequest(req, config);
+    }  
   };
 }

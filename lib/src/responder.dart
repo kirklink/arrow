@@ -99,8 +99,8 @@ class Responder {
     final srcResponse = _response.innerRequest.response;
     if (_responseObject.body != null) {
       srcResponse.headers.set(io.HttpHeaders.contentTypeHeader, 'application/json');
-      srcResponse.write(_responseObject.body);
       srcResponse.statusCode = _responseObject.statusCode;
+      srcResponse.write(_responseObject.body);
     } else if (_responseObject.location != null) {
       srcResponse.statusCode = _responseObject.statusCode;
       srcResponse.redirect(_responseObject.location);
