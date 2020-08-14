@@ -1,4 +1,4 @@
-import 'package:http/http.dart' show Response;
+
 import 'dart:convert' show json;
 
 class ArrowResponse {
@@ -7,13 +7,17 @@ class ArrowResponse {
   String _errorMsg;
   Map<String, String> _errors;
 
-  ArrowResponse(Response serverResponse) {
-    final body = json.decode(serverResponse.body) as Map<String, Object>;
+  ArrowResponse(String responseBody) {
+    Map<String, Object> body = const <String, Object>{};
+    
+    if (responseBody != null && responseBody.isNotEmpty || responseBody == null) {
+      body = json.decode(responseBody);
+    }
     
     if (body.containsKey('ok')) {
       _ok = body['ok'] as bool;
     } else {
-      _ok = serverResponse.statusCode >= 200 && serverResponse.statusCode < 300;
+      _ok = false;
     }
 
     if (body.containsKey('data')) {
