@@ -38,9 +38,11 @@ class Responder {
     return _response;
   }
 
-  Response unauthorized() {
+  Response unauthorized({String msg, Map<String, Object> errors}) {
     _onlyOnce();
-    _responseObject = ResponseObject.error(io.HttpStatus.unauthorized, 'Unauthorized', <String, String>{});
+    final m = msg ?? 'Unauthorized';
+    final e = errors ?? <String, String>{};
+    _responseObject = ResponseObject.error(io.HttpStatus.unauthorized, m, e);
     _response.cancel();
     return _response;
   }
