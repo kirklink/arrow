@@ -38,7 +38,7 @@ class Responder {
     return _response;
   }
 
-  Response unauthorized({String msg = 'Unauthorized.', Map<String, Object> errors = const <String, Object>{}}) {
+  Response unauthorized({String msg = 'Unauthorized.', Map<String, Object> errors = const <String, String>{}}) {
     _onlyOnce();
     _responseObject = ResponseObject.error(io.HttpStatus.unauthorized, msg, errors);
     _response.cancel();
@@ -47,12 +47,12 @@ class Responder {
 
   Response notFound() {
     _onlyOnce();
-    _responseObject = ResponseObject.error(io.HttpStatus.notFound, 'Not Found', <String, String>{});
+    _responseObject = ResponseObject.error(io.HttpStatus.notFound, 'Not Found', const <String, String>{});
     _response.cancel();
     return _response;
   }
 
-  Response badRequest({String msg = 'Bad Request.', Map<String, Object> errors = const <String, Object>{}}) {
+  Response badRequest({String msg = 'Bad Request.', Map<String, Object> errors = const <String, String>{}}) {
     _onlyOnce();
     _responseObject = ResponseObject.error(io.HttpStatus.badRequest, msg, errors);
     _response.cancel();
@@ -61,7 +61,7 @@ class Responder {
 
   Response serverError() {
     _onlyOnce();
-    _responseObject = ResponseObject.error(io.HttpStatus.internalServerError, 'Server Error', <String, String>{});
+    _responseObject = ResponseObject.error(io.HttpStatus.internalServerError, 'Server Error', const <String, String>{});
     _response.cancel();
     return _response;
   }
