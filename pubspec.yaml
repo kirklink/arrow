@@ -1,7 +1,7 @@
 name: arrow
 homepage: "https://github.com/kirklink/arrow"
 description: 'Dart api server.'
-version: 0.0.32
+version: 0.0.33
 environment:
   sdk: '>=2.1.0 <3.0.0'
 dependencies:
