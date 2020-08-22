@@ -4,12 +4,12 @@ import 'package:http/http.dart' as http;
 
 abstract class ArrowRequest {
 
-  static const _sendHeaders = {
+  static final _sendHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   };
 
-  static const _acceptHeaders = {
+  static final _acceptHeaders = {
     'Accept': 'application/json'
   };
 
