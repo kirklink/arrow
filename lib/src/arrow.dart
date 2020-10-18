@@ -6,13 +6,12 @@ import 'server.dart';
 
 /// An Arrow server.
 class Arrow {
-
-/// Starts the Arrow server with the provided [Router]. 
-/// 
-/// The [port] can be specified here but the ARROW_PORT environment variable
-/// will override this value if ARROW_PORT is found in the environment. Setting 
-/// [forceSSL] to true will redirect all http requests to https. [printRoutes] prints 
-/// all the configured routes to stdout when the server starts.
+  /// Starts the Arrow server with the provided [Router].
+  ///
+  /// The [port] can be specified here but the ARROW_PORT environment variable
+  /// will override this value if ARROW_PORT is found in the environment. Setting
+  /// [forceSSL] to true will redirect all http requests to https. [printRoutes] prints
+  /// all the configured routes to stdout when the server starts.
   Future run(Router router,
       {int port = 8080,
       bool forceSSL = false,
@@ -28,7 +27,12 @@ class Arrow {
     return;
   }
 
-  static final bool isOnProduction = Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'production';
+  static final isOnProduction =
+      Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'production';
+  static final isOnStaging =
+      Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'staging';
+  static final isOnDevelopment =
+      Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'development';
 
   static final environment = Platform.environment;
 }

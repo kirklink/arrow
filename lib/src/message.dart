@@ -3,7 +3,6 @@ import 'dart:io' as io;
 import 'package:arrow/src/context.dart';
 import 'package:arrow/src/internal_messenger.dart';
 
-
 class MessageException implements Exception {
   final String message;
 
@@ -30,8 +29,8 @@ abstract class Message {
   InternalMessenger _messenger;
   Alive _alive;
 
-
-  Message(this._innerRequest, [InternalMessenger messenger, Context context, Alive alive]) {
+  Message(this._innerRequest,
+      [InternalMessenger messenger, Context context, Alive alive]) {
     _messenger = messenger ?? InternalMessenger();
     _context = context ?? Context();
     _alive = alive ?? Alive();
@@ -43,12 +42,18 @@ abstract class Message {
   Alive get alive => _alive;
   InternalMessenger get messenger => _messenger;
 
-  bool get isOnProd => io.Platform.environment['ARROW_ENVIRONMENT'] == 'production';
+  bool get isOnProd =>
+      io.Platform.environment['ARROW_ENVIRONMENT'] == 'production';
+  bool get isOnStage =>
+      io.Platform.environment['ARROW_ENVIRONMENT'] == 'staging';
+  bool get isOnDev =>
+      io.Platform.environment['ARROW_ENVIRONMENT'] == 'development';
+  String get environment => io.Platform.environment['ARROW_ENVIRONMENT'];
+  String get envInitial => io.Platform.environment['ARROW_ENVIRONMENT'][0];
 
   bool get isAlive => _alive.isAlive;
 
   void cancel() {
     _alive.kill();
   }
-
 }
