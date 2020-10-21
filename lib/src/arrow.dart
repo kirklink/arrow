@@ -27,24 +27,23 @@ class Arrow {
     return;
   }
 
-  static final isOnProduction =
-      const String.fromEnvironment('ENVIRONMENT', defaultValue: '')
-              .toLowerCase() ==
-          'production';
-  static final isOnStaging =
-      const String.fromEnvironment('ENVIRONMENT', defaultValue: '')
-              .toLowerCase() ==
-          'staging';
-  static final isOnDevelopment =
-      const String.fromEnvironment('ENVIRONMENT', defaultValue: 'development')
-              .toLowerCase() ==
-          'development';
+  static final isOnProduction = const bool.hasEnvironment('ENVIRONMENT')
+      ? const String.fromEnvironment('ENVIRONMENT') == 'production'
+      : Platform.environment['ENVIRONMENT'] == 'production';
+  static final isOnStaging = const bool.hasEnvironment('ENVIRONMENT')
+      ? const String.fromEnvironment('ENVIRONMENT') == 'staging'
+      : Platform.environment['ENVIRONMENT'] == 'staging';
+  static final isOnDevelopment = const bool.hasEnvironment('ENVIRONMENT')
+      ? const String.fromEnvironment('ENVIRONMENT') == 'development'
+      : Platform.environment['ENVIRONMENT'] == 'development';
 
-  static final environment =
-      const String.fromEnvironment('ENVIRONMENT', defaultValue: '');
+  static final environment = const bool.hasEnvironment('ENVIRONMENT')
+      ? const String.fromEnvironment('ENVIRONMENT')
+      : Platform.environment['ENVIRONMENT'] ?? '';
 
   static final envVariables = Platform.environment;
 
-  static final port =
-      const String.fromEnvironment('PORT', defaultValue: '8080');
+  static final port = const bool.hasEnvironment('PORT')
+      ? const String.fromEnvironment('PORT')
+      : Platform.environment['PORT'] ?? '8080';
 }
