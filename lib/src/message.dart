@@ -43,13 +43,14 @@ abstract class Message {
   InternalMessenger get messenger => _messenger;
 
   bool get isOnProd =>
-      io.Platform.environment['ARROW_ENVIRONMENT'] == 'production';
+      io.Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() ==
+      'production';
   bool get isOnStage =>
-      io.Platform.environment['ARROW_ENVIRONMENT'] == 'staging';
+      io.Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'staging';
   bool get isOnDev =>
-      io.Platform.environment['ARROW_ENVIRONMENT'] == 'development';
-  String get environment => io.Platform.environment['ARROW_ENVIRONMENT'];
-  String get envInitial => io.Platform.environment['ARROW_ENVIRONMENT'][0];
+      io.Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() ==
+      'development';
+  String get environment => io.Platform.environment['ARROW_ENVIRONMENT'] ?? '';
 
   bool get isAlive => _alive.isAlive;
 
