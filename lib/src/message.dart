@@ -1,5 +1,6 @@
 import 'dart:io' as io;
 
+import 'package:arrow/src/arrow.dart';
 import 'package:arrow/src/context.dart';
 import 'package:arrow/src/internal_messenger.dart';
 
@@ -42,15 +43,10 @@ abstract class Message {
   Alive get alive => _alive;
   InternalMessenger get messenger => _messenger;
 
-  bool get isOnProd =>
-      io.Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() ==
-      'production';
-  bool get isOnStage =>
-      io.Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'staging';
-  bool get isOnDev =>
-      io.Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() ==
-      'development';
-  String get environment => io.Platform.environment['ARROW_ENVIRONMENT'] ?? '';
+  bool get isOnProd => Arrow.isOnProduction;
+  bool get isOnStage => Arrow.isOnStaging;
+  bool get isOnDev => Arrow.isOnDevelopment;
+  String get environment => Arrow.environment;
 
   bool get isAlive => _alive.isAlive;
 

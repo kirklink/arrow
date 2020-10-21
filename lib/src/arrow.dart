@@ -28,11 +28,19 @@ class Arrow {
   }
 
   static final isOnProduction =
-      Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'production';
+      const String.fromEnvironment('ARROW_ENVIRONMENT', defaultValue: '')
+              .toLowerCase() ==
+          'production';
   static final isOnStaging =
-      Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'staging';
-  static final isOnDevelopment =
-      Platform.environment['ARROW_ENVIRONMENT']?.toLowerCase() == 'development';
+      const String.fromEnvironment('ARROW_ENVIRONMENT', defaultValue: '')
+              .toLowerCase() ==
+          'staging';
+  static final isOnDevelopment = const String.fromEnvironment(
+              'ARROW_ENVIRONMENT',
+              defaultValue: 'development')
+          .toLowerCase() ==
+      'development';
 
-  static final environment = Platform.environment;
+  static final environment =
+      const String.fromEnvironment('ARROW_ENVIRONMENT', defaultValue: '');
 }
