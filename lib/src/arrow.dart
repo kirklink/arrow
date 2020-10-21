@@ -43,7 +43,7 @@ class Arrow {
   static final environment =
       const String.fromEnvironment('ENVIRONMENT', defaultValue: '');
 
-  static final environmentVariables = Platform.environment;
+  static final envVariables = Platform.environment;
 
   static final port =
       const String.fromEnvironment('PORT', defaultValue: '8080');
