@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'router.dart';
 import 'server.dart';
@@ -27,23 +26,19 @@ class Arrow {
     return;
   }
 
-  static final isOnProduction = const bool.hasEnvironment('ENVIRONMENT')
-      ? const String.fromEnvironment('ENVIRONMENT') == 'production'
-      : Platform.environment['ENVIRONMENT'] == 'production';
-  static final isOnStaging = const bool.hasEnvironment('ENVIRONMENT')
-      ? const String.fromEnvironment('ENVIRONMENT') == 'staging'
-      : Platform.environment['ENVIRONMENT'] == 'staging';
-  static final isOnDevelopment = const bool.hasEnvironment('ENVIRONMENT')
-      ? const String.fromEnvironment('ENVIRONMENT') == 'development'
-      : Platform.environment['ENVIRONMENT'] == 'development';
+  static final isOnProduction =
+      const String.fromEnvironment('ENVIRONMENT', defaultValue: '') ==
+          'production';
+  static final isOnStaging =
+      const String.fromEnvironment('ENVIRONMENT', defaultValue: '') ==
+          'staging';
+  static final isOnDevelopment =
+      const String.fromEnvironment('ENVIRONMENT', defaultValue: '') ==
+          'development';
 
-  static final environment = const bool.hasEnvironment('ENVIRONMENT')
-      ? const String.fromEnvironment('ENVIRONMENT')
-      : Platform.environment['ENVIRONMENT'] ?? '';
+  static final environment =
+      const String.fromEnvironment('ENVIRONMENT', defaultValue: '');
 
-  static final envVariables = Platform.environment;
-
-  static final port = const bool.hasEnvironment('PORT')
-      ? const String.fromEnvironment('PORT')
-      : Platform.environment['PORT'] ?? '8080';
+  static final port =
+      const String.fromEnvironment('PORT', defaultValue: '8080');
 }
