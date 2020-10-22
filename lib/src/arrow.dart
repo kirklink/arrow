@@ -27,18 +27,14 @@ class Arrow {
   }
 
   static final isOnProduction =
-      const String.fromEnvironment('ENVIRONMENT', defaultValue: '') ==
+      const String.fromEnvironment('BUILD_ENV', defaultValue: '') ==
           'production';
   static final isOnStaging =
-      const String.fromEnvironment('ENVIRONMENT', defaultValue: '') ==
-          'staging';
+      const String.fromEnvironment('BUILD_ENV', defaultValue: '') == 'staging';
   static final isOnDevelopment =
-      const String.fromEnvironment('ENVIRONMENT', defaultValue: '') ==
+      const String.fromEnvironment('BUILD_ENV', defaultValue: '') ==
           'development';
 
   static final environment =
-      const String.fromEnvironment('ENVIRONMENT', defaultValue: '');
-
-  static final port =
-      const String.fromEnvironment('PORT', defaultValue: '8080');
+      const String.fromEnvironment('BUILD_ENV', defaultValue: '');
 }

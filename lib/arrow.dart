@@ -1,4 +1,5 @@
 export 'src/arrow.dart';
+export 'src/environment.dart';
 export 'src/router.dart';
 export 'src/middleware.dart';
 export 'src/request.dart';
