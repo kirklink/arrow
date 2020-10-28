@@ -20,10 +20,15 @@ class Responder {
   bool get isComplete => _responseObject != null;
   int get statusCode => _responseObject.statusCode;
 
-  Response ok([Map<String, Object> data = const <String, Object>{}]) {
+  Response ok(
+      {Map<String, Object> data = const <String, Object>{},
+      bool printResponseObject = false}) {
     _onlyOnce();
     final code = _getSuccessCode();
     _responseObject = ResponseObject.ok(code, data);
+    if (printResponseObject) {
+      print(_responseObject);
+    }
     return _response;
   }
 
@@ -41,10 +46,14 @@ class Responder {
 
   Response unauthorized(
       {String msg = 'Unauthorized.',
-      Map<String, Object> errors = const <String, String>{}}) {
+      Map<String, Object> errors = const <String, String>{},
+      bool printResponseObject = false}) {
     _onlyOnce();
     _responseObject =
         ResponseObject.error(io.HttpStatus.unauthorized, msg, errors);
+    if (printResponseObject) {
+      print(_responseObject);
+    }
     _response.cancel();
     return _response;
   }
@@ -59,10 +68,14 @@ class Responder {
 
   Response badRequest(
       {String msg = 'Bad Request.',
-      Map<String, Object> errors = const <String, String>{}}) {
+      Map<String, Object> errors = const <String, String>{},
+      bool printResponseObject = false}) {
     _onlyOnce();
     _responseObject =
         ResponseObject.error(io.HttpStatus.badRequest, msg, errors);
+    if (printResponseObject) {
+      print(_responseObject);
+    }
     _response.cancel();
     return _response;
   }
