@@ -6,14 +6,15 @@ import 'package:arrow/src/response_object.dart';
 class ResponderException implements Exception {
   String cause;
   ResponderException(this.cause);
+
+  @override
+  String toString() => cause;
 }
 
-
 class Responder {
-
   Response _response;
   ResponseObject _responseObject;
-  
+
   Responder(this._response);
 
   bool get isComplete => _responseObject != null;
@@ -38,30 +39,38 @@ class Responder {
     return _response;
   }
 
-  Response unauthorized({String msg = 'Unauthorized.', Map<String, Object> errors = const <String, String>{}}) {
+  Response unauthorized(
+      {String msg = 'Unauthorized.',
+      Map<String, Object> errors = const <String, String>{}}) {
     _onlyOnce();
-    _responseObject = ResponseObject.error(io.HttpStatus.unauthorized, msg, errors);
+    _responseObject =
+        ResponseObject.error(io.HttpStatus.unauthorized, msg, errors);
     _response.cancel();
     return _response;
   }
 
   Response notFound() {
     _onlyOnce();
-    _responseObject = ResponseObject.error(io.HttpStatus.notFound, 'Not Found', const <String, String>{});
+    _responseObject = ResponseObject.error(
+        io.HttpStatus.notFound, 'Not Found', const <String, String>{});
     _response.cancel();
     return _response;
   }
 
-  Response badRequest({String msg = 'Bad Request.', Map<String, Object> errors = const <String, String>{}}) {
+  Response badRequest(
+      {String msg = 'Bad Request.',
+      Map<String, Object> errors = const <String, String>{}}) {
     _onlyOnce();
-    _responseObject = ResponseObject.error(io.HttpStatus.badRequest, msg, errors);
+    _responseObject =
+        ResponseObject.error(io.HttpStatus.badRequest, msg, errors);
     _response.cancel();
     return _response;
   }
 
   Response serverError() {
     _onlyOnce();
-    _responseObject = ResponseObject.error(io.HttpStatus.internalServerError, 'Server Error', const <String, String>{});
+    _responseObject = ResponseObject.error(io.HttpStatus.internalServerError,
+        'Server Error', const <String, String>{});
     _response.cancel();
     return _response;
   }
@@ -73,10 +82,9 @@ class Responder {
     return _response;
   }
 
-
   int _getSuccessCode() {
     if (_response.innerRequest.method == 'POST') {
-    return io.HttpStatus.created;
+      return io.HttpStatus.created;
     } else if (_response.innerRequest.method == 'DELETE') {
       return io.HttpStatus.ok;
     } else {
@@ -96,7 +104,8 @@ class Responder {
     }
     final srcResponse = _response.innerRequest.response;
     if (_responseObject.body != null) {
-      srcResponse.headers.set(io.HttpHeaders.contentTypeHeader, 'application/json');
+      srcResponse.headers
+          .set(io.HttpHeaders.contentTypeHeader, 'application/json');
       srcResponse.statusCode = _responseObject.statusCode;
       srcResponse.write(_responseObject.body);
     } else if (_responseObject.location != null) {
@@ -109,5 +118,4 @@ class Responder {
     }
     await srcResponse.close();
   }
-
 }
