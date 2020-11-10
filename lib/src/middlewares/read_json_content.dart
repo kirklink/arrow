@@ -9,15 +9,24 @@ Future<Request> readJsonContent(Request req) async {
   if ((req.method == 'POST' || req.method == 'PUT') &&
       (content == null || content == '')) {
     var res = req.response;
-    req.messenger.addError('[readJsonContent] ${req.method} had no content body.');
+    req.messenger
+        .addError('[readJsonContent] ${req.method} had no content body.');
     res.send.badRequest(msg: '${req.method} had no content.');
+    return req;
+  } else if ((req.method == 'GET' || req.method == 'DELETE') &&
+      content.isNotEmpty) {
+    final res = req.response;
+    req.messenger.addError(
+        'readJsonContent ${req.method} should not have content in the body.');
+    res.send.badRequest(msg: '${req.method} should not have a body.');
     return req;
   } else {
     try {
       req.content = JsonContent(content);
     } on FormatException catch (_) {
       var res = req.response;
-      res.messenger.addError('[readJsonContent] Could not decode bad json format in request.');
+      res.messenger.addError(
+          '[readJsonContent] Could not decode bad json format in request.');
       res.send.badRequest(errors: {'msg': 'Bad json formatting.'});
     } catch (e) {
       var res = req.response;
