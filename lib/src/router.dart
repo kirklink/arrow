@@ -157,7 +157,8 @@ class Router {
     return _notFoundCustom;
   }
 
-  Response _defaultRecoverer(Request req, {Exception exception, StackTrace stacktrace, Error error}) {
+  Response _defaultRecoverer(Request req,
+      {Exception exception, StackTrace stacktrace, Error error}) {
     print('!! -- Recover -- !!');
     print('Exception:');
     print(exception);
@@ -202,23 +203,23 @@ class Router {
   }
 
   Future<Response> serve(Request req) async {
-    Response res;
+    Future<Response> res;
     try {
-      res = await _serve(req);
+      res = _serve(req);
     } on Error catch (e, s) {
-      return await _recover(req, error: e, stacktrace: s);
+      return _recover(req, error: e, stacktrace: s);
     } catch (e, s) {
       if (_recover == null) {
         rethrow;
       } else {
-        return await _recover(req, exception: e, stacktrace: s);
+        return _recover(req, exception: e, stacktrace: s);
       }
     }
     if (res == null) {
       if (_notFoundDefault != null) {
-        return await _notFoundCustom.serve(req);
+        return _notFoundCustom.serve(req);
       } else {
-        return await _notFoundDefault.serve(req);
+        return _notFoundDefault.serve(req);
       }
     } else {
       return res;

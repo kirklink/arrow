@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'router.dart';
 import 'request.dart';
@@ -7,28 +7,23 @@ import 'response.dart';
 class Server {
   Router _router;
   int _port;
-  Map<String, String> _env = Platform.environment;
+  Map<String, String> _env = io.Platform.environment;
   bool _onProduction;
 
-  
   bool _isOnProduction() {
     if (_onProduction == null) {
-      // if (_env['ARROW_ENVIRONMENT'] == null) {
-      //   throw Exception('ARROW_ENVIRONMENT should be "Production" for production or any other string if not on production.');
-      // }
       if (_env['ARROW_ENVIRONMENT'] != null) {
         _onProduction = _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
       } else {
         _onProduction = false;
-      }  
+      }
     }
     return _onProduction;
   }
-  
+
   bool get onProduction {
     return _isOnProduction();
   }
-        
 
   Server(this._router, int port) {
     if (port != null) {
@@ -39,19 +34,20 @@ class Server {
   }
 
   Future start({bool forceSSL: false}) async {
-    final _server = await HttpServer.bind(InternetAddress.anyIPv4, _port);
-    if (!onProduction) print(
-        'Server listening on localhost, port ${_server.port}');
-    await for (HttpRequest req in _server) {
+    final _server = await io.HttpServer.bind(io.InternetAddress.anyIPv4, _port);
+    if (!onProduction)
+      print('Server listening on localhost, port ${_server.port}');
+    var count = 1;
+    await for (io.HttpRequest req in _server) {
       final reqUri = req.requestedUri;
       if (onProduction && forceSSL && reqUri.scheme != 'https') {
         req.response.redirect(
             Uri.https(reqUri.authority, reqUri.path, reqUri.queryParameters),
-            status: HttpStatus.movedPermanently);
+            status: io.HttpStatus.movedPermanently);
       } else {
         try {
-          final r = Request(req);
-          await _router.serve(r).then((Response res) {
+          print('serve: $count');
+          _router.serve(Request(req)).then((Response res) {
             res.complete();
             req.response.close();
           });
@@ -61,8 +57,6 @@ class Server {
             print(e);
             print('!! -- Unrecovered Server Error END -- !!');
           }
-
-        } finally {
           req.response.close();
         }
       }
