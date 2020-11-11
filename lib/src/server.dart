@@ -37,7 +37,6 @@ class Server {
     final _server = await io.HttpServer.bind(io.InternetAddress.anyIPv4, _port);
     if (!onProduction)
       print('Server listening on localhost, port ${_server.port}');
-    var count = 1;
     await for (io.HttpRequest req in _server) {
       final reqUri = req.requestedUri;
       if (onProduction && forceSSL && reqUri.scheme != 'https') {
@@ -46,7 +45,6 @@ class Server {
             status: io.HttpStatus.movedPermanently);
       } else {
         try {
-          print('serve: $count');
           _router.serve(Request(req)).then((Response res) {
             res.complete();
             req.response.close();
