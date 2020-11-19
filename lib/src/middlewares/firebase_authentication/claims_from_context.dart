@@ -9,5 +9,6 @@ FirebaseTokenClaims getFirebaseDefaultTokenClaims(Request req) {
 }
 
 Map<String, Object> getFirebaseRawTokenClaims(Request req) {
-  return req.context.get<Map<String, Object>>(firebaseRawTokenClaimsContext);
+  return (req.context.get(firebaseRawTokenClaimsContext)
+      as Map<String, Object>);
 }

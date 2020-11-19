@@ -117,8 +117,8 @@ class Responder {
     }
     final srcResponse = _response.innerRequest.response;
     if (_responseObject.body != null) {
-      srcResponse.headers
-          .set(io.HttpHeaders.contentTypeHeader, 'application/json');
+      srcResponse.headers.set(
+          io.HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
       srcResponse.statusCode = _responseObject.statusCode;
       srcResponse.write(_responseObject.body);
     } else if (_responseObject.location != null) {

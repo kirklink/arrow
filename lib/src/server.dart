@@ -1,5 +1,6 @@
 import 'dart:io' as io;
 
+import 'arrow.dart';
 import 'router.dart';
 import 'request.dart';
 import 'response.dart';
@@ -7,39 +8,18 @@ import 'response.dart';
 class Server {
   Router _router;
   int _port;
-  Map<String, String> _env = io.Platform.environment;
-  bool _onProduction;
-
-  bool _isOnProduction() {
-    if (_onProduction == null) {
-      if (_env['ARROW_ENVIRONMENT'] != null) {
-        _onProduction = _env['ARROW_ENVIRONMENT'].toLowerCase() == 'production';
-      } else {
-        _onProduction = false;
-      }
-    }
-    return _onProduction;
-  }
-
-  bool get onProduction {
-    return _isOnProduction();
-  }
 
   Server(this._router, int port) {
-    if (port != null) {
-      this._port = port;
-    } else {
-      this._port = 8080;
-    }
+    this._port = port != null ? port : 8080;
   }
 
   Future start({bool forceSSL: false}) async {
     final _server = await io.HttpServer.bind(io.InternetAddress.anyIPv4, _port);
-    if (!onProduction)
+    if (!Arrow.isOnProduction)
       print('Server listening on localhost, port ${_server.port}');
     await for (io.HttpRequest req in _server) {
       final reqUri = req.requestedUri;
-      if (onProduction && forceSSL && reqUri.scheme != 'https') {
+      if (Arrow.isOnProduction && forceSSL && reqUri.scheme != 'https') {
         req.response.redirect(
             Uri.https(reqUri.authority, reqUri.path, reqUri.queryParameters),
             status: io.HttpStatus.movedPermanently);
@@ -50,7 +30,7 @@ class Server {
             req.response.close();
           });
         } catch (e) {
-          if (!onProduction) {
+          if (!Arrow.isOnProduction) {
             print('!! -- Unrecovered Server Error START -- !!');
             print(e);
             print('!! -- Unrecovered Server Error END -- !!');

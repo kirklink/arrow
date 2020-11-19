@@ -7,8 +7,13 @@ import 'package:arrow/src/request_middleware.dart';
 
 class Cors {
   List<String> _allowedOrigins = ['*'];
-  List<String> _allowedHeaders = ['Origin', 'Accept', 'Content-Type'];
-  List<String> _allowedMethods = ['GET', 'POST'];
+  List<String> _allowedHeaders = [
+    'Origin',
+    'Accept',
+    'Content-Type',
+    'Authorization'
+  ];
+  List<String> _allowedMethods = ['GET', 'POST', 'PUT', 'DELETE'];
   List<List<String>> _allowedWildcardOrigins;
   bool _allowAllOrigins = false;
   bool _allowAllHeaders = false;
@@ -145,7 +150,8 @@ class Cors {
 Request handlePreFlight(Request req, Cors cors) {
   if (req.method != 'OPTIONS') {
     var res = req.response;
-    res.messenger.addError(('[cors] Preflight aborted. ${req.method}!="OPTIONS'));
+    res.messenger
+        .addError(('[cors] Preflight aborted. ${req.method}!="OPTIONS'));
     res.send.serverError();
     return req;
   }
@@ -232,7 +238,8 @@ Request handleActualRequest(Request req, Cors cors) {
 
   if (!cors.isAllowedOrigin(origin)) {
     var res = req.response;
-    res.messenger.addError('[cors] Actual request aborted. Not an allowed origin: $origin');
+    res.messenger.addError(
+        '[cors] Actual request aborted. Not an allowed origin: $origin');
     res.send.badRequest();
     return req;
   }
@@ -263,9 +270,9 @@ Request handleActualRequest(Request req, Cors cors) {
 RequestMiddleware CorsMiddleware(Cors config) {
   return (Request req) {
     if (req.method == 'OPTIONS') {
-     return handlePreFlight(req, config);
+      return handlePreFlight(req, config);
     } else {
       return handleActualRequest(req, config);
-    }  
+    }
   };
 }

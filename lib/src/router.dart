@@ -192,6 +192,7 @@ class Router {
         return res;
       }
     }
+
     if (req.isAlive && _routeTree.length > 0) {
       var route = await _findRoute(req);
       if (route != null) {
@@ -203,23 +204,23 @@ class Router {
   }
 
   Future<Response> serve(Request req) async {
-    Future<Response> res;
+    Response res;
     try {
-      res = _serve(req);
+      res = await _serve(req);
     } on Error catch (e, s) {
-      return _recover(req, error: e, stacktrace: s);
+      return await _recover(req, error: e, stacktrace: s);
     } catch (e, s) {
       if (_recover == null) {
         rethrow;
       } else {
-        return _recover(req, exception: e, stacktrace: s);
+        return await _recover(req, exception: e, stacktrace: s);
       }
     }
     if (res == null) {
       if (_notFoundDefault != null) {
-        return _notFoundCustom.serve(req);
+        return await _notFoundCustom.serve(req);
       } else {
-        return _notFoundDefault.serve(req);
+        return await _notFoundDefault.serve(req);
       }
     } else {
       return res;

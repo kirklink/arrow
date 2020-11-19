@@ -26,7 +26,7 @@ const firebaseRawTokenClaimsContext = '#firebase_raw_token_claims';
 //   return EnvironmentInfo.currentProject;
 // }
 
-typedef bool VerifyClaims(Map<String, String> claims);
+typedef bool VerifyClaims(Map<String, Object> claims);
 
 class FirebaseCertificate {
   DateTime expiresAt;
@@ -188,8 +188,7 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
       }
     }
 
-    req.context.set<Map<String, Object>>(
-        firebaseRawTokenClaimsContext, decodedToken.claims);
+    req.context.set(firebaseRawTokenClaimsContext, decodedToken.claims);
 
     if (setDefaultClaimsOnContext) {
       final claims = FirebaseTokenClaims.fromJson(decodedToken.claims);
