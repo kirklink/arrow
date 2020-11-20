@@ -21,7 +21,8 @@ class Responder {
   int get statusCode => _responseObject.statusCode;
 
   Response ok(
-      {Map<String, Object> data = const <String, Object>{},
+      {Object data = const <String, Object>{},
+      String serializedData = '',
       bool printResponseObject = false}) {
     _onlyOnce();
     final code = _getSuccessCode();
@@ -32,7 +33,7 @@ class Responder {
     return _response;
   }
 
-  Response raw(int statusCode, Map<String, Object> data) {
+  Response raw(int statusCode, Object data) {
     _onlyOnce();
     _responseObject = ResponseObject.ok(statusCode, data, wrapped: false);
     return _response;
