@@ -1,6 +1,13 @@
 import 'dart:convert' show jsonEncode;
 import 'package:http/http.dart' as http;
 
+class ArrowRequestException implements Exception {
+  final String reason;
+  const ArrowRequestException(this.reason);
+  @override
+  String toString() => reason;
+}
+
 abstract class ArrowRequest {
   static final _sendHeaders = {
     'Content-Type': 'application/json',
@@ -20,9 +27,7 @@ abstract class ArrowRequest {
 
   static Future<http.Response> get(Uri uri,
       {String token = '', http.Client client}) {
-    if (client == null) {
-      client = http.Client();
-    }
+    client ??= http.Client();
     final headers = _addAuthToken(_acceptHeaders, token);
     final res = client.get(uri, headers: headers);
     client.close();
@@ -30,27 +35,33 @@ abstract class ArrowRequest {
   }
 
   static Future<http.Response> post(Uri uri,
-      {Map<String, Object> body = const <String, Object>{},
+      {Object body = const <String, Object>{},
       String token = '',
       http.Client client}) async {
-    if (client == null) {
-      client = http.Client();
+    if (body is! String && body is! Map<String, Object>) {
+      throw ArrowRequestException(
+          'Body must be a String or Map<String, Object>');
     }
+    body = body is String ? body : jsonEncode(body);
+    client ??= http.Client();
     final headers = _addAuthToken(_sendHeaders, token);
-    final res = client.post(uri, body: jsonEncode(body), headers: headers);
+    final res = client.post(uri, body: body, headers: headers);
     client.close();
     return res;
   }
 
   static Future<http.Response> put(Uri uri,
-      {Map<String, Object> body = const <String, Object>{},
+      {Object body = const <String, Object>{},
       String token = '',
       http.Client client}) {
-    if (client == null) {
-      client = http.Client();
+    if (body is! String && body is! Map<String, Object>) {
+      throw ArrowRequestException(
+          'Body must be a String or Map<String, Object>');
     }
+    body = body is String ? body : jsonEncode(body);
+    client ??= http.Client();
     final headers = _addAuthToken(_sendHeaders, token);
-    final res = client.put(uri, body: jsonEncode(body), headers: headers);
+    final res = client.put(uri, body: body, headers: headers);
     client.close();
     return res;
   }
@@ -59,20 +70,21 @@ abstract class ArrowRequest {
       {Map<String, Object> body = const <String, Object>{},
       String token = '',
       http.Client client}) {
-    if (client == null) {
-      client = http.Client();
+    if (body is! String && body is! Map<String, Object>) {
+      throw ArrowRequestException(
+          'Body must be a String or Map<String, Object>');
     }
+    body = body is String ? body : jsonEncode(body);
+    client ??= http.Client();
     final headers = _addAuthToken(_sendHeaders, token);
-    final res = client.patch(uri, body: jsonEncode(body), headers: headers);
+    final res = client.patch(uri, body: body, headers: headers);
     client.close();
     return res;
   }
 
   static Future<http.Response> delete(Uri uri,
       {String token = '', http.Client client}) {
-    if (client == null) {
-      client = http.Client();
-    }
+    client ??= http.Client();
     final headers = _addAuthToken(_acceptHeaders, token);
     final res = client.delete(uri, headers: headers);
     client.close();
