@@ -20,11 +20,8 @@ class ResponseObject {
     return {'statusCode': _statusCode, 'body': json.decode(_body)}.toString();
   }
 
-  ResponseObject.ok(this._statusCode, Object data, {bool wrapped = true}) {
-    if (data is! Map<String, Object> || data is! String) {
-      throw ResponseObjectException(
-          'data provided must be a serialized string or a Map<String, Object>');
-    }
+  ResponseObject.ok(this._statusCode, Map<String, Object> data,
+      {bool wrapped = true}) {
     if (_statusCode < 200 || _statusCode > 299) {
       throw ResponseObjectException(
           'Response cannot be "ok" with status code $_statusCode.');
