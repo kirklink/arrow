@@ -4,8 +4,6 @@ class ResponseObjectException implements Exception {
   String cause;
 
   ResponseObjectException(this.cause);
-  @override
-  String toString() => cause;
 }
 
 class ResponseObject {
@@ -23,16 +21,13 @@ class ResponseObject {
   }
 
   ResponseObject.ok(this._statusCode, Object data, {bool wrapped = true}) {
-    if (data is! Map<String, Object> && data is! String) {
+    if (data is! Map<String, Object> || data is! String) {
       throw ResponseObjectException(
           'data provided must be a serialized string or a Map<String, Object>');
     }
     if (_statusCode < 200 || _statusCode > 299) {
       throw ResponseObjectException(
           'Response cannot be "ok" with status code $_statusCode.');
-    }
-    if (data is String) {
-      data = json.decode(data);
     }
     if (wrapped) {
       _body = json.encode({"ok": true, "data": data});
