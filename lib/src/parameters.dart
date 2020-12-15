@@ -8,7 +8,7 @@ class Parameters {
   Map<String, String> _parameters;
 
   String get(String key) {
-    if (!_parameters.containsKey(key)) return null;
+    if (!_parameters.containsKey(key)) return '';
     return _parameters[key];
   }
 
