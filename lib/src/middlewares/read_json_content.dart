@@ -5,8 +5,8 @@ import 'package:arrow/src/request.dart';
 import 'package:arrow/src/content.dart';
 
 Future<Request> readJsonContent(Request req) async {
-  String content = await utf8.decodeStream(req.innerRequest);
-  if ((req.method == 'POST' || req.method == 'PUT') &&
+  String content = await utf8.decoder.bind(req.innerRequest).join();
+  if ((req.method == 'POST' || req.method == 'PUT' || req.method == 'PATCH') &&
       (content == null || content == '')) {
     var res = req.response;
     req.messenger
@@ -22,7 +22,7 @@ Future<Request> readJsonContent(Request req) async {
     return req;
   } else {
     try {
-      req.content = JsonContent(content);
+      req.content = JsonContent(content != null ? content : '');
     } on FormatException catch (_) {
       var res = req.response;
       res.messenger.addError(
