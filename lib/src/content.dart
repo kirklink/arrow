@@ -18,7 +18,14 @@ class JsonContent implements Content {
     if (content.trim().isEmpty) {
       _content = const {};
     } else {
-      _content = json.decode(content);
+      final c = json.decode(content);
+      if (c is Map) {
+        _content = c;
+      } else if (c is List) {
+        _content['data'] = _content;
+      } else {
+        throw FormatException('Body is not an object or list.');
+      }
     }
   }
 
