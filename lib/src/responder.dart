@@ -1,7 +1,7 @@
 import 'dart:io' as io;
 
-import 'package:arrow/src/response.dart';
-import 'package:arrow/src/response_object.dart';
+import 'response.dart';
+import 'response_object.dart';
 
 class ResponderException implements Exception {
   String cause;

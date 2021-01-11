@@ -26,15 +26,21 @@ class Arrow {
     return;
   }
 
+  /// Returns true if the environment variable BUILD_ENV is 'production'
   static final isOnProduction =
       const String.fromEnvironment('BUILD_ENV', defaultValue: '') ==
           'production';
+
+  /// Returns true if the environment variable BUILD_ENV is 'staging'
   static final isOnStaging =
       const String.fromEnvironment('BUILD_ENV', defaultValue: '') == 'staging';
+
+  /// Returns true if the environment variable BUILD_ENV is 'development'
   static final isOnDevelopment =
       const String.fromEnvironment('BUILD_ENV', defaultValue: '') ==
           'development';
 
+  /// Returns the environment variable BUILD_ENV
   static final environment =
       const String.fromEnvironment('BUILD_ENV', defaultValue: '');
 }

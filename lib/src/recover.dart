@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:arrow/src/request.dart';
-import 'package:arrow/src/response.dart';
+import 'request.dart';
+import 'response.dart';
 
-typedef FutureOr<Response> Recoverer(Request req, {Exception exception, StackTrace stacktrace, Error error});
+typedef FutureOr<Response> Recoverer(Request req,
+    {Exception exception, StackTrace stacktrace, Error error});

@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:uri/uri.dart' as u;
 
-import 'package:arrow/src/message.dart';
-import 'package:arrow/src/response.dart';
-import 'package:arrow/src/parameters.dart';
-import 'package:arrow/src/content.dart';
+import 'message.dart';
+import 'response.dart';
+import 'parameters.dart';
+import 'content.dart';
 
 class Request extends Message {
   Parameters _params = Parameters();
@@ -40,6 +40,4 @@ class Request extends Message {
       return _response;
     }
   }
-
-
 }

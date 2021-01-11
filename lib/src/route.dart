@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:uri/uri.dart' as u;
 
-import 'package:arrow/src/handler.dart';
-import 'package:arrow/src/request.dart';
-import 'package:arrow/src/response.dart';
-import 'package:arrow/src/response_middleware.dart';
-import 'package:arrow/src/request_middleware.dart';
-import 'package:arrow/src/middleware.dart';
-import 'package:arrow/src/constants.dart' show RouterMethods;
-import 'package:arrow/src/pipeline.dart';
+import 'handler.dart';
+import 'request.dart';
+import 'response.dart';
+import 'response_middleware.dart';
+import 'request_middleware.dart';
+import 'middleware.dart';
+import 'constants.dart' show RouterMethods;
+import 'pipeline.dart';
 
 class Route {
   String _pattern;
@@ -43,8 +43,8 @@ class Route {
       Handler error,
       bool useAlways: false}) {
     _pipeline = _pipeline.Clone();
-    _pipeline.use(
-        Middleware(pre: pre, post: post, error: error, useAlways: useAlways));
+    _pipeline.use(Middleware(
+        onRequest: pre, onResponse: post, error: error, runAlways: useAlways));
   }
 
   void addAsync(
@@ -54,11 +54,11 @@ class Route {
       bool useAlways: false}) {
     _pipeline = _pipeline.Clone();
     _pipeline.use(Middleware(
-        pre: pre,
-        post: post,
+        onRequest: pre,
+        onResponse: post,
         error: error,
-        useParallel: true,
-        useAlways: useAlways));
+        runAsync: true,
+        runAlways: useAlways));
   }
 
   void add(Middleware middleware) {

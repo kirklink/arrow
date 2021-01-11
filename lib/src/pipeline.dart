@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:arrow/src/middleware.dart';
-import 'package:arrow/src/handler.dart';
-import 'package:arrow/src/request.dart';
-import 'package:arrow/src/response.dart';
+import 'middleware.dart';
+import 'handler.dart';
+import 'request.dart';
+import 'response.dart';
 
 typedef Future<Request> WrappedPreHandler(Request req);
 typedef Future<Response> WrappedPostHandler(Response res);
@@ -34,7 +34,7 @@ class Pipeline {
 
   WrappedPreHandler _wrapPreProcess(Middleware middleware) {
     return (Request req) async {
-      if (middleware.useAlways) {
+      if (middleware.runAlways) {
         return Future(() async => middleware.preProcess(req));
       } else {
         return Future(() async {
@@ -50,7 +50,7 @@ class Pipeline {
 
   WrappedPostHandler _wrapPostProcess(Middleware middleware) {
     return (Response res) async {
-      if (middleware.useAlways) {
+      if (middleware.runAlways) {
         return Future(() async => middleware.postProcess(res));
       } else {
         return Future(() async {
@@ -65,7 +65,7 @@ class Pipeline {
   }
 
   void use(Middleware middleware) {
-    if (middleware.useParallel) {
+    if (middleware.runAsync) {
       if (middleware.preProcess != null) {
         _parallelPreHandlers.add(_wrapPreProcess(middleware));
       }
@@ -92,7 +92,8 @@ class Pipeline {
       res = await endpoint(req);
     } else {
       res = req.response;
-    };
+    }
+    ;
 
     res = await _processPostParallel(res, _parallelPostHandlers);
 

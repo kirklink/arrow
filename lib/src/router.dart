@@ -1,16 +1,14 @@
 import 'dart:async';
 import 'package:uri/uri.dart';
 
-import 'package:arrow/src/request.dart';
-import 'package:arrow/src/response.dart';
-import 'package:arrow/src/middleware.dart';
-import 'package:arrow/src/handler.dart';
-import 'package:arrow/src/request_middleware.dart';
-import 'package:arrow/src/response_middleware.dart';
-import 'package:arrow/src/route.dart';
-import 'package:arrow/src/pipeline.dart';
-import 'package:arrow/src/constants.dart';
-import 'package:arrow/src/recover.dart';
+import 'request.dart';
+import 'response.dart';
+import 'middleware.dart';
+import 'handler.dart';
+import 'route.dart';
+import 'pipeline.dart';
+import 'constants.dart';
+import 'recover.dart';
 
 typedef Router RouterBuilder();
 
@@ -29,6 +27,22 @@ class Router {
 
   Recoverer _recover;
 
+  /// A [Router] is created to specify the URIs (routes) that the server can handle. Routers
+  /// take [Middleware], which are functions that are executed on [Request]s
+  /// ([RequestMiddleware]) and [Response]es ([ResponseMiddleware]). Routers also
+  /// take a [Handler], which is the function to execute for the specified
+  /// route.
+  /// Middleware are executed in the following order:
+  /// 1. Synchronous [RequestMiddleware] in the order they are added to the [Router]
+  /// 2. Asynchronous [RequestMiddleware] asynchronously in no guaranteed order until they are all completed
+  /// 3. The request [Handler] which initiates the response
+  /// 4. Asynchronous [ResponseMiddleware] asynchronously in no guaranteed order until they are all completed
+  /// 5. Synchronous [ResponseMiddleware] in the reverse order they are added to the [Router]
+  /// A [Router] can also be created as a group, which is a sub-router for routes
+  /// that have the same partial URIs. These groups can inherit or have their own
+  /// middleware stack.
+  /// A [Router] can optionally be assigned a [Handler] to be used for not found routes
+  /// (i.e. 404 errors) and/or a [Recoverer] from unhandled errors and exceptions.
   Router(
       {Pipeline notFoundPipeline,
       Handler notFoundHandler,
@@ -50,13 +64,19 @@ class Router {
     _parser = UriParser(_template, queryParamsAreOptional: true);
   }
 
-  Router Group(String pattern) {
+  /// Create a new Router Group (sub-router) that shares part of a URI
+  /// with its child routes. By default the new group inherits the Middleware
+  /// stack from its parent but the Middleware stack can have Middleware added
+  /// or completely cleared.
+  Router group(String pattern) {
     pattern = _formatPattern(pattern);
     Router child = Router._group(_pattern + pattern, _pipeline.Clone());
     _childRouters.add(child);
     return child;
   }
 
+  /// A convenience method that will print all of the routes that this
+  /// Router will handle when the router is initialized.
   void printRoutes() {
     _routeTree.forEach((k, v) {
       v.sort((a, b) => a.pattern.compareTo(b.pattern));
@@ -73,43 +93,47 @@ class Router {
     }
   }
 
-  void useSerial(
-      {RequestMiddleware pre,
-      ResponseMiddleware post,
-      Handler error,
-      bool useAlways: false}) {
-    if (!_pipelineIsClosed()) {
-      _pipeline.use(
-          Middleware(pre: pre, post: post, error: error, useAlways: useAlways));
-    }
-  }
+  // void useSerial(
+  //     {RequestMiddleware pre,
+  //     ResponseMiddleware post,
+  //     Handler error,
+  //     bool useAlways: false}) {
+  //   if (!_pipelineIsClosed()) {
+  //     _pipeline.use(
+  //         Middleware(pre: pre, post: post, error: error, useAlways: useAlways));
+  //   }
+  // }
 
-  void useParallel(
-      {RequestMiddleware pre,
-      ResponseMiddleware post,
-      Handler error,
-      bool useAlways: false}) {
-    if (!_pipelineIsClosed()) {
-      _pipeline.use(Middleware(
-          pre: pre,
-          post: post,
-          error: error,
-          useParallel: true,
-          useAlways: useAlways));
-    }
-  }
+  // void useParallel(
+  //     {RequestMiddleware pre,
+  //     ResponseMiddleware post,
+  //     Handler error,
+  //     bool useAlways: false}) {
+  //   if (!_pipelineIsClosed()) {
+  //     _pipeline.use(Middleware(
+  //         pre: pre,
+  //         post: post,
+  //         error: error,
+  //         useParallel: true,
+  //         useAlways: useAlways));
+  //   }
+  // }
 
+  /// Add a [Middleware] to this Router's middleware stack.
   void use(Middleware middleware) {
     if (!_pipelineIsClosed()) {
       _pipeline.use(middleware);
     }
   }
 
-  void clearPipeline() {
+  /// Removes all the [Middleware] from the stack. Useful for clearing and
+  /// then redefining the middleware for a router group.
+  void clearMiddleware() {
     _pipeline = Pipeline();
   }
 
-  Route GET(String pattern, Handler endpoint) {
+  /// Create a GET route with the specified URI pattern and handler
+  Route get(String pattern, Handler endpoint) {
     pattern = _formatPattern(pattern);
     Route route =
         Route(RouterMethods.GET, _pattern + pattern, endpoint, _pipeline);
@@ -117,7 +141,8 @@ class Router {
     return route;
   }
 
-  Route POST(String pattern, Handler endpoint) {
+  /// Create a POST route with the specified URI pattern and handler
+  Route post(String pattern, Handler endpoint) {
     pattern = _formatPattern(pattern);
     Route route =
         Route(RouterMethods.POST, _pattern + pattern, endpoint, _pipeline);
@@ -125,7 +150,8 @@ class Router {
     return route;
   }
 
-  Route PUT(String pattern, Handler endpoint) {
+  /// Create a PUT route with the specified URI pattern and handler
+  Route put(String pattern, Handler endpoint) {
     pattern = _formatPattern(pattern);
     Route route =
         Route(RouterMethods.PUT, _pattern + pattern, endpoint, _pipeline);
@@ -133,7 +159,8 @@ class Router {
     return route;
   }
 
-  Route DELETE(String pattern, Handler endpoint) {
+  /// Create a DELETE route with the specified URI pattern and handler
+  Route delete(String pattern, Handler endpoint) {
     pattern = _formatPattern(pattern);
     Route route =
         Route(RouterMethods.DELETE, _pattern + pattern, endpoint, _pipeline);
@@ -147,7 +174,9 @@ class Router {
     return res;
   }
 
-  Route NOT_FOUND(Handler endpoint) {
+  /// Add a custom handler to execute when a route is not found. By default,
+  /// the router simply returns a 404 error.
+  Route notFound(Handler endpoint) {
     if (_notFoundCustom != null)
       throw Exception('Custom NOT_FOUND route is already set.');
     if (_notFoundDefault == null)
@@ -172,7 +201,10 @@ class Router {
     return res;
   }
 
-  void RECOVER([Recoverer recover]) {
+  /// Add a [Recoverer] function to execute when an unhandled exception
+  /// or error occurs. If added but a custom Recoverer is not provided, the default
+  /// Recover prints the Exception/Error message and stack trace.
+  void recover([Recoverer recover]) {
     _recover = recover == null ? _defaultRecoverer : recover;
     return;
   }
@@ -208,7 +240,11 @@ class Router {
     try {
       res = await _serve(req);
     } on Error catch (e, s) {
-      return await _recover(req, error: e, stacktrace: s);
+      if (_recover == null) {
+        rethrow;
+      } else {
+        return await _recover(req, error: e, stacktrace: s);
+      }
     } catch (e, s) {
       if (_recover == null) {
         rethrow;
@@ -227,6 +263,8 @@ class Router {
     }
   }
 
+  /// Returns true if the router base route matches part of the requested URI.
+  /// This is used when matching route groups to URIs.
   bool canHandle(Uri uri) {
     return _parser.matches(uri);
   }

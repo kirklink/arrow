@@ -1,6 +1,6 @@
-import 'package:arrow/src/message.dart';
-import 'package:arrow/src/responder.dart';
-import 'package:arrow/src/request.dart';
+import 'message.dart';
+import 'responder.dart';
+import 'request.dart';
 
 class Response extends Message {
   Responder _responder;
@@ -10,8 +10,6 @@ class Response extends Message {
     _responder = Responder(this);
   }
 
-  
-
   Responder get send => _responder;
 
   int get statusCode => _responder.statusCode;
@@ -19,8 +17,4 @@ class Response extends Message {
   Future complete() async {
     await _responder.complete();
   }
-
-
-
-
 }

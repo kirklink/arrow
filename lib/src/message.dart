@@ -1,8 +1,8 @@
 import 'dart:io' as io;
 
-import 'package:arrow/src/arrow.dart';
-import 'package:arrow/src/context.dart';
-import 'package:arrow/src/internal_messenger.dart';
+import 'arrow.dart';
+import 'context.dart';
+import 'internal_messenger.dart';
 
 class MessageException implements Exception {
   final String message;

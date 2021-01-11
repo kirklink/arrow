@@ -1,35 +1,18 @@
-import 'dart:convert' show json;
+
 
 class ContentException implements Exception {
-  String cause;
+  final String _cause;
 
-  ContentException(this.cause);
+  ContentException(this._cause);
+
+  @override
+  String toString() => _cause;
 }
 
+// Interface definition for processed request content
 abstract class Content {
   String get string;
   Map<String, Object> get map;
 }
 
-class JsonContent implements Content {
-  Map<String, Object> _content;
 
-  JsonContent(String content) {
-    if (content.trim().isEmpty) {
-      _content = const {};
-    } else {
-      final c = json.decode(content);
-      if (c is Map) {
-        _content = c;
-      } else if (c is List) {
-        _content = {'data': c};
-      } else {
-        throw FormatException('Body is not an object or list.');
-      }
-    }
-  }
-
-  String get string => json.encode(_content);
-
-  Map<String, Object> get map => _content;
-}
