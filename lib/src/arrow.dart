@@ -16,7 +16,7 @@ class Arrow {
       bool forceSSL = false,
       bool printRoutes = false}) async {
     if (printRoutes) _printRoutes(router);
-    Server server = Server(router, port);
+    final server = Server(router, port);
     await server.start(forceSSL: forceSSL);
     return;
   }
