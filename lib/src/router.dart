@@ -253,7 +253,7 @@ class Router {
       }
     }
     if (res == null) {
-      if (_notFoundDefault != null) {
+      if (_notFoundCustom != null) {
         return await _notFoundCustom.serve(req);
       } else {
         return await _notFoundDefault.serve(req);
