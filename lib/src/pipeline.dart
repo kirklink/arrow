@@ -5,41 +5,41 @@ import 'handler.dart';
 import 'request.dart';
 import 'response.dart';
 
-typedef Future<Request> WrappedPreHandler(Request req);
-typedef Future<Response> WrappedPostHandler(Response res);
+typedef Future<Request> WrappedRequestHandler(Request req);
+typedef Future<Response> WrappedResponseHandler(Response res);
 
 class Pipeline {
-  List<WrappedPreHandler> _serialPreHandlers = List<WrappedPreHandler>();
-  List<WrappedPostHandler> _serialPostHandlers = List<WrappedPostHandler>();
-  List<WrappedPreHandler> _parallelPreHandlers = List<WrappedPreHandler>();
-  List<WrappedPostHandler> _parallelPostHandlers = List<WrappedPostHandler>();
+  List<WrappedRequestHandler> _syncRequestHandlers = List<WrappedRequestHandler>();
+  List<WrappedResponseHandler> _syncResponseHandlers = List<WrappedResponseHandler>();
+  List<WrappedRequestHandler> _asyncRequestHandlers = List<WrappedRequestHandler>();
+  List<WrappedResponseHandler> _asyncResponseHandlers = List<WrappedResponseHandler>();
 
   Pipeline();
 
   Pipeline._clone(
-      List<WrappedPreHandler> serialPreHandlers,
-      List<WrappedPostHandler> serialPostHandlers,
-      List<WrappedPreHandler> parallelPreHandlers,
-      List<WrappedPostHandler> parallelPostHandlers) {
-    _serialPreHandlers = List.from(serialPreHandlers);
-    _serialPostHandlers = List.from(serialPostHandlers);
-    _parallelPreHandlers = List.from(parallelPreHandlers);
-    _parallelPostHandlers = List.from(parallelPostHandlers);
+      List<WrappedRequestHandler> syncRequestHandlers,
+      List<WrappedResponseHandler> syncResponseHandlers,
+      List<WrappedRequestHandler> asyncRequestHandlers,
+      List<WrappedResponseHandler> asyncResponseHandlers) {
+    _syncRequestHandlers = List.from(syncRequestHandlers);
+    _syncResponseHandlers = List.from(syncResponseHandlers);
+    _asyncRequestHandlers = List.from(asyncRequestHandlers);
+    _asyncResponseHandlers = List.from(asyncResponseHandlers);
   }
 
   Pipeline Clone() {
-    return Pipeline._clone(_serialPreHandlers, _serialPostHandlers,
-        _parallelPreHandlers, _parallelPostHandlers);
+    return Pipeline._clone(_syncRequestHandlers, _syncResponseHandlers,
+        _asyncRequestHandlers, _asyncResponseHandlers);
   }
 
-  WrappedPreHandler _wrapPreProcess(Middleware middleware) {
+  WrappedRequestHandler _wrapRequestHandler(Middleware middleware) {
     return (Request req) async {
-      if (middleware.runAlways) {
-        return Future(() async => middleware.preProcess(req));
+      if (middleware.useAlways) {
+        return Future(() async => middleware.requestHandler(req));
       } else {
         return Future(() async {
           if (req.isAlive) {
-            return middleware.preProcess(req);
+            return middleware.requestHandler(req);
           } else {
             return req;
           }
@@ -48,14 +48,14 @@ class Pipeline {
     };
   }
 
-  WrappedPostHandler _wrapPostProcess(Middleware middleware) {
+  WrappedResponseHandler _wrapResponseHandler(Middleware middleware) {
     return (Response res) async {
-      if (middleware.runAlways) {
-        return Future(() async => middleware.postProcess(res));
+      if (middleware.useAlways) {
+        return Future(() async => middleware.responseHandler(res));
       } else {
         return Future(() async {
           if (res.isAlive) {
-            return middleware.postProcess(res);
+            return middleware.responseHandler(res);
           } else {
             return res;
           }
@@ -66,26 +66,30 @@ class Pipeline {
 
   void use(Middleware middleware) {
     if (middleware.runAsync) {
-      if (middleware.preProcess != null) {
-        _parallelPreHandlers.add(_wrapPreProcess(middleware));
+      if (middleware.requestHandler != null) {
+        _asyncRequestHandlers.add(_wrapRequestHandler(middleware));
       }
-      if (middleware.postProcess != null) {
-        _parallelPostHandlers.insert(0, _wrapPostProcess(middleware));
+      if (middleware.responseHandler != null) {
+        _asyncResponseHandlers.insert(0, _wrapResponseHandler(middleware));
       }
     } else {
-      if (middleware.preProcess != null) {
-        _serialPreHandlers.add(_wrapPreProcess(middleware));
+      if (middleware.requestHandler != null) {
+        _syncRequestHandlers.add(_wrapRequestHandler(middleware));
       }
-      if (middleware.postProcess != null) {
-        _serialPostHandlers.insert(0, _wrapPostProcess(middleware));
+      if (middleware.responseHandler != null) {
+        _syncResponseHandlers.insert(0, _wrapResponseHandler(middleware));
       }
     }
   }
 
   Future<Response> serve(Request req, Handler endpoint) async {
-    req = await _processPreSerial(req, _serialPreHandlers);
+    if (_syncRequestHandlers.isNotEmpty) {
+      req = await _processSyncRequestHandlers(req, _syncRequestHandlers);
+    }
 
-    req = await _processPreParallel(req, _parallelPreHandlers);
+    if (_asyncRequestHandlers.isNotEmpty) {
+      req = await _processAsyncRequestHandlers(req, _asyncRequestHandlers);
+    }
 
     Response res;
     if (req.isAlive) {
@@ -95,31 +99,35 @@ class Pipeline {
     }
     ;
 
-    res = await _processPostParallel(res, _parallelPostHandlers);
+    if (_asyncResponseHandlers.isNotEmpty) {
+      res = await _processAsyncResponseHandlers(res, _asyncResponseHandlers);
+    }
 
-    res = await _processPostSerial(res, _serialPostHandlers);
+    if (_syncResponseHandlers.isNotEmpty) {
+      res = await _processSyncResponseHandlers(res, _syncResponseHandlers);
+    }
 
     return res;
   }
 
-  Future<Request> _processPreSerial(
-      Request req, List<WrappedPreHandler> handlers) async {
+  Future<Request> _processSyncRequestHandlers(
+      Request req, List<WrappedRequestHandler> handlers) async {
     for (var handler in handlers) {
       req = await handler(req);
     }
     return req;
   }
 
-  Future<Response> _processPostSerial(
-      Response res, List<WrappedPostHandler> handlers) async {
+  Future<Response> _processSyncResponseHandlers(
+      Response res, List<WrappedResponseHandler> handlers) async {
     for (var handler in handlers) {
       res = await handler(res);
     }
     return res;
   }
 
-  Future<Request> _processPreParallel(
-      Request req, List<WrappedPreHandler> handlers) async {
+  Future<Request> _processAsyncRequestHandlers(
+      Request req, List<WrappedRequestHandler> handlers) async {
     if (handlers.length == 0) return Future.value(req);
     List<Future<Request>> futures = <Future<Request>>[];
     for (var handler in handlers) {
@@ -128,8 +136,8 @@ class Pipeline {
     return Future.wait(futures).then((result) => result[result.length - 1]);
   }
 
-  Future<Response> _processPostParallel(
-      Response res, List<WrappedPostHandler> handlers) async {
+  Future<Response> _processAsyncResponseHandlers(
+      Response res, List<WrappedResponseHandler> handlers) async {
     if (handlers.length == 0) return Future.value(res);
     List<Future<Response>> futures = <Future<Response>>[];
     for (var handler in handlers) {

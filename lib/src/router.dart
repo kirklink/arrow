@@ -51,7 +51,7 @@ class Router {
     if (notFoundPipeline != null && notFoundHandler != null) {
       _notFoundCustom = Route('GET', '', notFoundHandler, notFoundPipeline);
     } else if (notFoundPipeline == null && notFoundHandler == null) {
-      _notFoundDefault = Route('GET', '', _notFoundDefaultHandler, Pipeline());
+      _notFoundDefault = Route('GET', '', _notFoundDefaultHandler, _pipeline);
     } else {
       throw ArgumentError(
           'Pipeline and Handler must be provided to set up the Not Found (404) route.');
@@ -92,32 +92,6 @@ class Router {
       return false;
     }
   }
-
-  // void useSerial(
-  //     {RequestMiddleware pre,
-  //     ResponseMiddleware post,
-  //     Handler error,
-  //     bool useAlways: false}) {
-  //   if (!_pipelineIsClosed()) {
-  //     _pipeline.use(
-  //         Middleware(pre: pre, post: post, error: error, useAlways: useAlways));
-  //   }
-  // }
-
-  // void useParallel(
-  //     {RequestMiddleware pre,
-  //     ResponseMiddleware post,
-  //     Handler error,
-  //     bool useAlways: false}) {
-  //   if (!_pipelineIsClosed()) {
-  //     _pipeline.use(Middleware(
-  //         pre: pre,
-  //         post: post,
-  //         error: error,
-  //         useParallel: true,
-  //         useAlways: useAlways));
-  //   }
-  // }
 
   /// Add a [Middleware] to this Router's middleware stack.
   void use(Middleware middleware) {
@@ -169,20 +143,18 @@ class Router {
   }
 
   Future<Response> _notFoundDefaultHandler(Request req) async {
-    var res = req.response;
-    res.send.notFound();
-    return res;
+    return req.response.send.notFound();
   }
 
   /// Add a custom handler to execute when a route is not found. By default,
   /// the router simply returns a 404 error.
-  Route notFound(Handler endpoint) {
+  Route notFound(Handler handler) {
     if (_notFoundCustom != null)
       throw Exception('Custom NOT_FOUND route is already set.');
     if (_notFoundDefault == null)
       throw Exception(
           'Something went wrong. Cannot add NOT_FOUND to a child router. This is a bug.');
-    _notFoundCustom = Route(RouterMethods.GET, '', endpoint, _pipeline);
+    _notFoundCustom = Route(RouterMethods.GET, '', handler, _pipeline);
     return _notFoundCustom;
   }
 

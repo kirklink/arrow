@@ -44,7 +44,7 @@ class Route {
       bool useAlways: false}) {
     _pipeline = _pipeline.Clone();
     _pipeline.use(Middleware(
-        onRequest: pre, onResponse: post, error: error, runAlways: useAlways));
+        onRequest: pre, onResponse: post, error: error, useAlways: useAlways));
   }
 
   void addAsync(
@@ -58,7 +58,7 @@ class Route {
         onResponse: post,
         error: error,
         runAsync: true,
-        runAlways: useAlways));
+        useAlways: useAlways));
   }
 
   void add(Middleware middleware) {
