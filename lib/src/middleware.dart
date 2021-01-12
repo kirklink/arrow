@@ -22,12 +22,12 @@ import 'response_middleware.dart';
 /// on the modification or to spawn related but independent processes such as storing a request
 /// count to a database or retrieving multiple services a handler might depend on.
 class Middleware {
-  RequestMiddleware _requestHandler;
-  ResponseMiddleware _responseHandler;
+  RequestMiddleware _requestMiddleware;
+  ResponseMiddleware _responseMiddleware;
   Handler _errorHandler;
 
-  RequestMiddleware get requestHandler => _requestHandler;
-  ResponseMiddleware get responseHandler => _responseHandler;
+  RequestMiddleware get requestMiddleware => _requestMiddleware;
+  ResponseMiddleware get responseMiddleware => _responseMiddleware;
   Handler get errorHandler => _errorHandler;
 
   final bool runAsync;
@@ -46,10 +46,10 @@ class Middleware {
       this.runAsync = false,
       this.useAlways = false}) {
     if (onRequest != null) {
-      _requestHandler = onRequest;
+      _requestMiddleware = onRequest;
     }
     if (onResponse != null) {
-      _responseHandler = onResponse;
+      _responseMiddleware = onResponse;
     }
     if (error != null) {
       _errorHandler = error;

@@ -11,11 +11,15 @@ class Arrow {
   /// will override this value if ARROW_PORT is found in the environment. Setting
   /// [forceSSL] to true will redirect all http requests to https. [printRoutes] prints
   /// all the configured routes to stdout when the server starts.
-  Future run(Router router,
+  Future run(RouterBuilder routerBuilder,
       {int port = 8080,
       bool forceSSL = false,
       bool printRoutes = false}) async {
-    if (printRoutes) _printRoutes(router);
+    final router = routerBuilder();
+    if (printRoutes) {
+      _printRoutes(router);
+    }
+    ;
     final server = Server(router, port);
     await server.start(forceSSL: forceSSL);
     return;

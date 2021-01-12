@@ -35,11 +35,11 @@ class Pipeline {
   WrappedRequestHandler _wrapRequestHandler(Middleware middleware) {
     return (Request req) async {
       if (middleware.useAlways) {
-        return Future(() async => middleware.requestHandler(req));
+        return Future(() async => middleware.requestMiddleware(req));
       } else {
         return Future(() async {
           if (req.isAlive) {
-            return middleware.requestHandler(req);
+            return middleware.requestMiddleware(req);
           } else {
             return req;
           }
@@ -51,11 +51,11 @@ class Pipeline {
   WrappedResponseHandler _wrapResponseHandler(Middleware middleware) {
     return (Response res) async {
       if (middleware.useAlways) {
-        return Future(() async => middleware.responseHandler(res));
+        return Future(() async => middleware.responseMiddleware(res));
       } else {
         return Future(() async {
           if (res.isAlive) {
-            return middleware.responseHandler(res);
+            return middleware.responseMiddleware(res);
           } else {
             return res;
           }
@@ -66,17 +66,17 @@ class Pipeline {
 
   void use(Middleware middleware) {
     if (middleware.runAsync) {
-      if (middleware.requestHandler != null) {
+      if (middleware.requestMiddleware != null) {
         _asyncRequestHandlers.add(_wrapRequestHandler(middleware));
       }
-      if (middleware.responseHandler != null) {
+      if (middleware.responseMiddleware != null) {
         _asyncResponseHandlers.insert(0, _wrapResponseHandler(middleware));
       }
     } else {
-      if (middleware.requestHandler != null) {
+      if (middleware.requestMiddleware != null) {
         _syncRequestHandlers.add(_wrapRequestHandler(middleware));
       }
-      if (middleware.responseHandler != null) {
+      if (middleware.responseMiddleware != null) {
         _syncResponseHandlers.insert(0, _wrapResponseHandler(middleware));
       }
     }
