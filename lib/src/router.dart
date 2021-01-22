@@ -262,7 +262,9 @@ class Router {
   }
 
   String _formatPattern(String pattern) {
-    if (!pattern.startsWith('/')) pattern = '/' + pattern;
+    if (!pattern.startsWith('/') && !pattern.startsWith('{?')) {
+      pattern = '/' + pattern;
+    }
     if (pattern.endsWith('/')) {
       pattern = pattern.substring(0, pattern.length - 1);
     }
