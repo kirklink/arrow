@@ -8,8 +8,11 @@ class Parameters {
   Map<String, String> _parameters;
 
   String get(String key) {
-    if (!_parameters.containsKey(key)) return '';
-    return _parameters[key];
+    if (!_parameters.containsKey(key)) {
+      return '';
+    } else {
+      return _parameters[key] ?? '';
+    }
   }
 
   void load(Map<String, String> srcParameters) {
