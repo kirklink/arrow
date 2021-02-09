@@ -32,7 +32,7 @@ class LogRequests {
 }
 
 RequestMiddleware loggerIn() {
-  return (Request req) {
+  return (Request req) async {
     req.context.set(loggerContextKey, LogRequests(req));
     return req;
   };
@@ -55,7 +55,7 @@ String _errorMessages(Response res, bool isOn) {
 }
 
 ResponseMiddleware loggerOut({Logger logger: null, bool messages: false}) {
-  return (Response res) {
+  return (Response res) async {
     if (logger == null) logger = _defaultLogger;
     var log = res.context.get<LogRequests>(loggerContextKey);
     log.end();
@@ -63,8 +63,7 @@ ResponseMiddleware loggerOut({Logger logger: null, bool messages: false}) {
       logger(
           '[ERROR] ${res.statusCode} ${log.message()}${_messages(res, messages)}${_errorMessages(res, messages)}');
     } else {
-      logger(
-          '${res.statusCode} ${log.message()}${_messages(res, messages)}');
+      logger('${res.statusCode} ${log.message()}${_messages(res, messages)}');
     }
     return res;
   };

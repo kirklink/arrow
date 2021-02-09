@@ -7,3 +7,4 @@ export 'src/handler.dart';
 export 'src/request_middleware.dart';
 export 'src/response_middleware.dart';
 export 'src/pipeline.dart';
+export 'src/guard.dart' show GuardResult, Guard;

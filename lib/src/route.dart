@@ -6,6 +6,7 @@ import 'request.dart';
 import 'response.dart';
 import 'response_middleware.dart';
 import 'request_middleware.dart';
+import 'guard.dart';
 import 'middleware.dart';
 import 'constants.dart' show RouterMethods;
 import 'pipeline.dart';
@@ -42,7 +43,7 @@ class Route {
       ResponseMiddleware post,
       Handler error,
       bool useAlways: false}) {
-    _pipeline = _pipeline.Clone();
+    _pipeline = _pipeline.clone();
     _pipeline.use(Middleware(
         onRequest: pre, onResponse: post, error: error, useAlways: useAlways));
   }
@@ -52,7 +53,7 @@ class Route {
       ResponseMiddleware post,
       Handler error,
       bool useAlways: false}) {
-    _pipeline = _pipeline.Clone();
+    _pipeline = _pipeline.clone();
     _pipeline.use(Middleware(
         onRequest: pre,
         onResponse: post,
@@ -62,8 +63,12 @@ class Route {
   }
 
   void add(Middleware middleware) {
-    _pipeline = _pipeline.Clone();
+    _pipeline = _pipeline.clone();
     _pipeline.use(middleware);
+  }
+
+  void guard(Guard guard) {
+    _pipeline = _pipeline.clone(GuardBuilder(guard));
   }
 
   Future<Response> serve(Request req) async {

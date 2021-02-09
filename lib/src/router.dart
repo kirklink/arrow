@@ -70,7 +70,7 @@ class Router {
   /// or completely cleared.
   Router group(String pattern) {
     pattern = _formatPattern(pattern);
-    Router child = Router._group(_pattern + pattern, _pipeline.Clone());
+    Router child = Router._group(_pattern + pattern, _pipeline.clone());
     _childRouters.add(child);
     return child;
   }

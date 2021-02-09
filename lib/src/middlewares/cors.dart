@@ -225,7 +225,7 @@ Request handleActualRequest(Request req, Cors cors) {
 }
 
 RequestMiddleware CorsMiddleware(Cors config) {
-  return (Request req) {
+  return (Request req) async {
     if (req.method == 'OPTIONS') {
       return handlePreFlight(req, config);
     } else {
