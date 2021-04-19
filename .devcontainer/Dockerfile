@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-FROM google/dart:2.10.2
+FROM google/dart:2.12.2
 
 
 # Docker script args, location, and expected SHA - SHA generated on release

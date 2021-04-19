@@ -1,8 +1,12 @@
-import 'dart:convert' show json;
+import 'dart:convert' show json, base64, utf8;
 import 'dart:io' show CertificateException;
 import 'package:http/http.dart' as http;
 
-import 'package:corsac_jwt/corsac_jwt.dart';
+// import 'package:corsac_jwt/corsac_jwt.dart';
+// import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+// import 'package:jaguar_jwt/jaguar_jwt.dart';
+// import 'package:jose/jose.dart';
+import 'decode.dart';
 
 import 'package:arrow/src/request.dart' show Request;
 import 'package:arrow/src/request_middleware.dart';
@@ -12,8 +16,8 @@ import 'package:arrow/src/middlewares/firebase_authentication/firebase_token_cla
 // import 'package:arrow/src/config/constants.dart' as context
 //     show firebaseTokenClaimsContext;
 
-const firebaseCertificateUrl =
-    'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
+final firebaseCertificateUrl = Uri.parse(
+    'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
 
 String _issuer(String currentProject) {
   return 'https://securetoken.google.com/${currentProject}';
@@ -27,6 +31,34 @@ const firebaseRawTokenClaimsContext = '#firebase_raw_token_claims';
 // }
 
 typedef bool VerifyClaims(Map<String, Object> claims);
+
+// class UnverifiedTokenHeader {
+//   final String alg;
+//   final String kid;
+
+//   UnverifiedTokenHeader._(this.alg, this.kid);
+
+//   factory UnverifiedTokenHeader(String encoded) {
+//     final padded = _base64Padded(encoded);
+//     final codec = utf8.fuse(base64);
+//     final decoded = codec.decode(padded);
+//     final map = json.decode(decoded);
+//     return UnverifiedTokenHeader._(map['alg'] as String, map['kid'] as String);
+//   }
+
+//   static String _base64Padded(String value) {
+//     final lenght = value.length;
+
+//     switch (lenght % 4) {
+//       case 2:
+//         return value.padRight(lenght + 2, '=');
+//       case 3:
+//         return value.padRight(lenght + 1, '=');
+//       default:
+//         return value;
+//     }
+//   }
+// }
 
 class FirebaseCertificate {
   DateTime expiresAt;
@@ -88,34 +120,10 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
       req.response.send.unauthorized(msg: 'Invalid authorization algorithm.');
       return req;
     }
-    if (!decodedToken.headers.containsKey('kid')) {
+    final kid = decodedToken.headers['kid'] ?? '';
+
+    if (kid.isEmpty) {
       req.response.send.unauthorized(msg: 'Invalid kid claim.');
-      return req;
-    }
-    if (decodedToken.expiresAt <=
-        DateTime.now().millisecondsSinceEpoch / 1000) {
-      req.response.send.unauthorized(msg: 'Invalid exp claim.');
-      return req;
-    }
-    if (decodedToken.issuedAt >= DateTime.now().millisecondsSinceEpoch / 1000) {
-      req.response.send.unauthorized(msg: 'Invalid iat claim.');
-      return req;
-    }
-    if (decodedToken.audience != gcpProjectName) {
-      req.response.send.unauthorized(msg: 'Invalid aud claim.');
-      return req;
-    }
-    if (decodedToken.issuer != _issuer(gcpProjectName)) {
-      req.response.send.unauthorized(msg: 'Invalid iss claim.');
-      return req;
-    }
-    if (decodedToken.subject == null || decodedToken.subject.isEmpty) {
-      req.response.send.unauthorized(msg: 'Invalid sub claim.');
-      return req;
-    }
-    if (decodedToken.claims['auth_time'] >=
-        DateTime.now().millisecondsSinceEpoch / 1000) {
-      req.response.send.unauthorized(msg: 'Invalid iat claim.');
       return req;
     }
 
@@ -151,12 +159,6 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
       certificate = FirebaseCertificate(expiresAt, certs);
     }
 
-    final kid = decodedToken.headers['kid'];
-    if (kid == null) {
-      req.response.send.unauthorized(msg: 'An invalid kid claim was provided.');
-      return req;
-    }
-
     var isValid = false;
     try {
       final publicKey = certificate.certificate[kid];
@@ -170,6 +172,33 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
 
     if (!isValid) {
       req.response.send.unauthorized(msg: 'The jwt token was not valid.');
+      return req;
+    }
+
+    if (decodedToken.expiresAt <=
+        DateTime.now().millisecondsSinceEpoch / 1000) {
+      req.response.send.unauthorized(msg: 'Invalid exp claim.');
+      return req;
+    }
+    if (decodedToken.issuedAt >= DateTime.now().millisecondsSinceEpoch / 1000) {
+      req.response.send.unauthorized(msg: 'Invalid iat claim.');
+      return req;
+    }
+    if (decodedToken.audience != gcpProjectName) {
+      req.response.send.unauthorized(msg: 'Invalid aud claim.');
+      return req;
+    }
+    if (decodedToken.issuer != _issuer(gcpProjectName)) {
+      req.response.send.unauthorized(msg: 'Invalid iss claim.');
+      return req;
+    }
+    if (decodedToken.subject == null || decodedToken.subject.isEmpty) {
+      req.response.send.unauthorized(msg: 'Invalid sub claim.');
+      return req;
+    }
+    if (decodedToken.claims['auth_time'] >=
+        DateTime.now().millisecondsSinceEpoch / 1000) {
+      req.response.send.unauthorized(msg: 'Invalid iat claim.');
       return req;
     }
 
