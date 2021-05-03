@@ -115,7 +115,7 @@ Request handlePreFlight(Request req, Cors cors) {
   req.innerRequest.response.headers
       .add(HttpHeaders.varyHeader, 'Access-Control-Request-Headers');
 
-  final origin = Uri.tryParse(req.headers.value('Origin') ?? '');
+  final origin = Uri.tryParse(req.headers.value('Origin') ?? '')!;
 
   if (origin == null || !origin.hasScheme || !origin.hasAuthority) {
     req.messenger.addError(

@@ -14,8 +14,8 @@ typedef Router RouterBuilder();
 
 class Router {
   String _pattern = '';
-  UriTemplate _template;
-  UriParser _parser;
+  late UriTemplate _template;
+  late UriParser _parser;
   final bool _isChild;
 
   Pipeline _pipeline = Pipeline();
@@ -45,9 +45,9 @@ class Router {
   /// A [Router] can optionally be assigned a [Handler] to be used for not found routes
   /// (i.e. 404 errors) and/or a [Recoverer] from unhandled errors and exceptions.
   Router(
-      {Pipeline notFoundPipeline,
+      {Pipeline? notFoundPipeline,
       bool shouldRecover = true,
-      Recoverer recoverer})
+      Recoverer? recoverer})
       : _isChild = false,
         _shouldRecover = shouldRecover {
     if (notFoundPipeline != null) {
@@ -130,7 +130,7 @@ class Router {
   // whatever is already stacked in the pipeline (does that make sense?)
 
   /// Create a GET route with the specified URI pattern and handler
-  Route get(String pattern, Handler endpoint, {Pipeline pipeline}) {
+  Route get(String pattern, Handler endpoint, {Pipeline? pipeline}) {
     pattern = _formatPattern(pattern);
     Route route = Route(
         RouterMethods.GET, _pattern + pattern, endpoint, pipeline ?? _pipeline);
@@ -165,7 +165,7 @@ class Router {
     return route;
   }
 
-  static Future<Response> _notFoundHandler(Request req) async {
+  static Future<Response?> _notFoundHandler(Request req) async {
     return req.respond.notFound();
   }
 
@@ -181,8 +181,8 @@ class Router {
   //   return _notFoundCustom;
   // }
 
-  static Future<Response> _defaultRecoverer(Request req,
-      {Exception exception, StackTrace stacktrace, Error error}) async {
+  static Future<Response?> _defaultRecoverer(Request req,
+      {Exception? exception, StackTrace? stacktrace, Error? error}) async {
     print('!! -- Recover -- !!');
     print('Exception:');
     print(exception);
@@ -208,10 +208,10 @@ class Router {
     if (!_routeTree.containsKey(method)) {
       _routeTree[method] = <Route>[];
     }
-    _routeTree[method].add(route);
+    _routeTree[method]!.add(route);
   }
 
-  Future<Response> _serve(Request req) async {
+  Future<Response?> _serve(Request req) async {
     if (req.isAlive && _childRouters.length > 0) {
       final childRouter = await _findChildRouter(req);
       if (childRouter != null) {
@@ -232,17 +232,17 @@ class Router {
     return req.respond.serverError();
   }
 
-  Future<Response> serve(Request req) async {
+  Future<Response?> serve(Request req) async {
     try {
       return await _serve(req);
     } on Error catch (e, s) {
-      if (_recoverer == null) {
+      if (!_shouldRecover) {
         rethrow;
       } else {
         return await _recoverer(req, error: e, stacktrace: s);
       }
-    } catch (e, s) {
-      if (_recoverer == null) {
+    } on Exception catch (e, s) {
+      if (!_shouldRecover) {
         rethrow;
       } else {
         return await _recoverer(req, exception: e, stacktrace: s);
@@ -256,7 +256,7 @@ class Router {
     return _parser.matches(uri);
   }
 
-  Future<Router> _findChildRouter(Request req) async {
+  Future<Router?> _findChildRouter(Request req) async {
     for (Router child in _childRouters) {
       if (child.canHandle(req.uri)) {
         return child;
@@ -265,7 +265,7 @@ class Router {
     return null;
   }
 
-  Future<Route> _findRoute(Request req) async {
+  Future<Route?> _findRoute(Request req) async {
     var routes = _routeTree[req.method];
     if (routes == null) return null;
     for (Route route in routes) {

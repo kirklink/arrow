@@ -4,7 +4,7 @@ import 'package:uuid/uuid_util.dart';
 class Context<T> {
   final _items = <String, dynamic>{};
 
-  T trySet<T>(String key, T value) {
+  T? trySet<T>(String key, T value) {
     if (_items.containsKey(key)) {
       return null;
     }
@@ -32,12 +32,12 @@ class Context<T> {
   //   return _items[key];
   // }
 
-  T tryGet<T>(String key) {
+  T? tryGet<T>(String key) {
     if (!_items.containsKey(key)) return null;
     return _items[key];
   }
 
-  T getOrSet<T>(String key, T value) {
+  T? getOrSet<T>(String key, T value) {
     return _items.putIfAbsent(key, () => value);
   }
 
@@ -54,7 +54,7 @@ class Context<T> {
   //   return null;
   // }
 
-  T tryDelete<T>(String key) {
+  T? tryDelete<T>(String key) {
     if (_items.containsKey(key)) {
       final i = tryGet<T>(key);
       _items.remove(key);

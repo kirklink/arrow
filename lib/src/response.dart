@@ -3,7 +3,7 @@ import 'context.dart';
 import 'internal_messenger.dart';
 
 class Response {
-  final Request request;
+  final Request? request;
   final Map<String, dynamic> data;
   final Map<String, String> errors;
 
@@ -11,10 +11,10 @@ class Response {
       {this.data = const <String, dynamic>{},
       this.errors = const <String, String>{}});
 
-  bool get isAlive => request.isAlive;
-  int get statusCode => request.innerRequest.response.statusCode;
-  Context get context => request.context;
-  InternalMessenger get messenger => request.messenger;
+  bool get isAlive => request!.isAlive;
+  int get statusCode => request!.innerRequest.response.statusCode;
+  Context get context => request!.context;
+  InternalMessenger get messenger => request!.messenger;
 
-  void cancel() => request.cancel();
+  void cancel() => request!.cancel();
 }

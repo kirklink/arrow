@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:arrow/src/request.dart';
 
 Future<Request> enforceJsonContentType(Request req) async {
-  ContentType contentType = req.innerRequest.headers.contentType;
+  ContentType? contentType = req.innerRequest.headers.contentType;
   if (req.method == 'GET' || req.method == 'DELETE') {
     if (contentType != null) {
       req.messenger

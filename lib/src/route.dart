@@ -13,9 +13,9 @@ import 'pipeline.dart';
 
 class Route {
   String _pattern;
-  String _method;
-  u.UriTemplate _template;
-  u.UriParser _parser;
+  String? _method;
+  late u.UriTemplate _template;
+  late u.UriParser _parser;
   Handler _endpoint;
   Pipeline _pipeline;
 
@@ -56,7 +56,7 @@ class Route {
     _pipeline = _pipeline.clone(guard);
   }
 
-  Future<Response> serve(Request req) async {
+  Future<Response?> serve(Request req) async {
     req.params.load(_parser.parse(req.uri));
     return _pipeline.serve(req, _endpoint);
   }

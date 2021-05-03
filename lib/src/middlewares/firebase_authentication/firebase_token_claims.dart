@@ -9,11 +9,11 @@ class FirebaseTokenClaims {
 
   factory FirebaseTokenClaims.fromJson(Map<String, Object> json) {
     return FirebaseTokenClaims(
-        json['sub'] as String ?? '',
-        json['email'] as String ?? '',
-        json['email_verified'] as bool ?? false,
+        json['sub'] as String? ?? '',
+        json['email'] as String? ?? '',
+        json['email_verified'] as bool? ?? false,
         DateTime.fromMillisecondsSinceEpoch(
-            ((json['exp'] as int ?? 0) * 1000)));
+            ((json['exp'] as int? ?? 0) * 1000)));
   }
 
   Map<String, Object> toJson() {

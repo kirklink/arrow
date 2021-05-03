@@ -1,7 +1,7 @@
 class InternalMessenger {
-  final _messages = List<String>();
-  final _errors = List<String>();
-  
+  final _messages = <String>[];
+  final _errors = <String>[];
+
   List<String> get messages => _messages;
   List<String> get errors => _errors;
 

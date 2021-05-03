@@ -19,7 +19,7 @@ abstract class ArrowRequest {
   }
 
   static Future<http.Response> get(Uri uri,
-      {String token = '', http.Client client}) {
+      {String token = '', http.Client? client}) {
     if (client == null) {
       client = http.Client();
     }
@@ -32,7 +32,7 @@ abstract class ArrowRequest {
   static Future<http.Response> post(Uri uri,
       {Map<String, Object> body = const <String, Object>{},
       String token = '',
-      http.Client client}) async {
+      http.Client? client}) async {
     if (client == null) {
       client = http.Client();
     }
@@ -45,7 +45,7 @@ abstract class ArrowRequest {
   static Future<http.Response> put(Uri uri,
       {Map<String, Object> body = const <String, Object>{},
       String token = '',
-      http.Client client}) {
+      http.Client? client}) {
     if (client == null) {
       client = http.Client();
     }
@@ -58,7 +58,7 @@ abstract class ArrowRequest {
   static Future<http.Response> patch(Uri uri,
       {Map<String, Object> body = const <String, Object>{},
       String token = '',
-      http.Client client}) {
+      http.Client? client}) {
     if (client == null) {
       client = http.Client();
     }
@@ -69,7 +69,7 @@ abstract class ArrowRequest {
   }
 
   static Future<http.Response> delete(Uri uri,
-      {String token = '', http.Client client}) {
+      {String token = '', http.Client? client}) {
     if (client == null) {
       client = http.Client();
     }

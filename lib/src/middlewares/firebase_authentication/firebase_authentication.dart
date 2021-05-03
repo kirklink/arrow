@@ -62,27 +62,27 @@ typedef bool VerifyClaims(Map<String, Object> claims);
 
 class FirebaseCertificate {
   DateTime expiresAt;
-  Map<String, String> certificate;
+  Map<String, String?> certificate;
 
   FirebaseCertificate._(this.expiresAt, this.certificate);
 
   factory FirebaseCertificate(
-      DateTime expiresAt, Map<String, String> certificate) {
+      DateTime expiresAt, Map<String, String?> certificate) {
     _cache = FirebaseCertificate._(expiresAt, certificate);
-    return _cache;
+    return _cache!;
   }
 
   static bool isValid() =>
       _cache != null &&
-      _cache.expiresAt
+      _cache!.expiresAt
           .isAfter(DateTime.now().toUtc().add(Duration(seconds: 1)));
-  static FirebaseCertificate getCertificate() => _cache;
+  static FirebaseCertificate? getCertificate() => _cache;
 
-  static FirebaseCertificate _cache;
+  static FirebaseCertificate? _cache;
 }
 
 RequestMiddleware firebaseAuthentication(String gcpProjectName,
-    {VerifyClaims verifier,
+    {VerifyClaims? verifier,
     String verifyFailMessage = '',
     bool setDefaultClaimsOnContext = true}) {
   return (Request req) async {
@@ -126,7 +126,7 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
       return req;
     }
 
-    FirebaseCertificate certificate;
+    FirebaseCertificate? certificate;
 
     // Check if the cached certificate is still valid
     if (FirebaseCertificate.isValid()) {
@@ -134,7 +134,7 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
     } else {
       final resp = await http.get(firebaseCertificateUrl);
 
-      final cacheControl = resp.headers['cache-control'];
+      final cacheControl = resp.headers['cache-control']!;
       final cacheControlParts = cacheControl.split(', ');
       var maxAge = '';
       for (final p in cacheControlParts) {
@@ -151,15 +151,15 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
       final expiresAt =
           DateTime.now().toUtc().add(Duration(seconds: expirySeconds));
       final respCerts = json.decode(resp.body) as Map<String, Object>;
-      final certs = <String, String>{};
+      final certs = <String, String?>{};
       for (final k in respCerts.keys) {
-        certs[k] = respCerts[k] as String;
+        certs[k] = respCerts[k] as String?;
       }
       certificate = FirebaseCertificate(expiresAt, certs);
     }
 
     try {
-      final publicKey = certificate.certificate[kid];
+      final publicKey = certificate!.certificate[kid]!;
       final signer = JWTRsaSha256Signer(publicKey);
       final isValid = decodedToken.verify(signer);
       if (!isValid) {
@@ -204,7 +204,7 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
     // If previously verified, good to pass through
     // See if a verifier was provided
     if (verifier != null) {
-      if (verifier(decodedToken.claims) == false) {
+      if (verifier(decodedToken.claims as Map<String, Object>) == false) {
         final failMessage = verifyFailMessage.isNotEmpty
             ? verifyFailMessage
             : 'The claims were not valid.';
@@ -216,7 +216,7 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
     req.context.trySet(firebaseRawClaimsContextId, decodedToken.claims);
 
     if (setDefaultClaimsOnContext) {
-      final claims = FirebaseTokenClaims.fromJson(decodedToken.claims);
+      final claims = FirebaseTokenClaims.fromJson(decodedToken.claims as Map<String, Object>);
       req.context
           .trySet<FirebaseTokenClaims>(firebaseDefaultClaimsContextId, claims);
     }

@@ -13,7 +13,7 @@ class JsonContent implements Content {
     if (content.trim().isNotEmpty) {
       final c = json.decode(content);
       if (c is Map) {
-        _map = c;
+        _map = c as Map<String, Object>;
       } else if (c is List) {
         if (listWrapper.isNotEmpty) {
           _map = {listWrapper: c};
@@ -26,9 +26,9 @@ class JsonContent implements Content {
     }
   }
 
-  String get string => json.encode(_map ?? '');
-  List get list => _list ?? const [];
-  Map<String, Object> get map => _map ?? const {};
+  String get string => json.encode(_map);
+  List get list => List.unmodifiable(_list);
+  Map<String, Object> get map => Map.unmodifiable(_map);
 }
 
 RequestMiddleware readJsonContent({String listWrapper = ''}) {

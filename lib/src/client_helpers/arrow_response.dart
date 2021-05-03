@@ -25,7 +25,7 @@ class ArrowResponse {
                 'The server return a ${response.statusCode} error.'
           };
       return ArrowResponse._(
-          _ok, _data, _errorMsg, _errors, response.statusCode, response.body);
+          _ok, _data as Map<String, Object>, _errorMsg as String, _errors as Map<String, Object>, response.statusCode, response.body);
     }
 
     if (response.body == null || response.body.isEmpty) {
@@ -36,7 +36,7 @@ class ArrowResponse {
         'serverResponse': 'No body was returned from the server.'
       };
       return ArrowResponse._(
-          _ok, _data, _errorMsg, _errors, response.statusCode, response.body);
+          _ok, _data as Map<String, Object>, _errorMsg, _errors, response.statusCode, response.body);
     }
 
     final body = jsonDecode(response.body) as Map<String, Object>;
@@ -47,6 +47,6 @@ class ArrowResponse {
     final _errors = body['errors'] ??
         {'serverResponse': 'An incompatible response format was returned.'};
     return ArrowResponse._(
-        _ok, _data, _errorMsg, _errors, response.statusCode, response.body);
+        _ok as bool, _data as Map<String, Object>, _errorMsg as String, _errors as Map<String, Object>, response.statusCode, response.body);
   }
 }

@@ -13,7 +13,7 @@ int secondsSinceEpoch(DateTime dateTime) =>
 final _logger = Logger('JWTRsaSha256Signer');
 
 class JWTRsaSha256Signer {
-  rsa.RSAPublicKey _publicKey;
+  rsa.RSAPublicKey? _publicKey;
 
   /// Creates new signer.
   JWTRsaSha256Signer(String publicKey) {
@@ -37,7 +37,7 @@ class JWTRsaSha256Signer {
     try {
       final s = Signer('SHA-256/RSA');
       final key = RSAPublicKey(
-          _publicKey.modulus, BigInt.from(_publicKey.publicExponent));
+          _publicKey!.modulus, BigInt.from(_publicKey!.publicExponent));
       final param = ParametersWithRandom(
         PublicKeyParameter<RSAPublicKey>(key),
         SecureRandom('AES/CTR/PRNG'),
@@ -124,7 +124,7 @@ class JWT {
 
   /// Contains original Base64 encoded token signature, or `null`
   /// if token is unsigned.
-  final String signature;
+  final String? signature;
 
   JWT._(this.encodedHeader, this.encodedPayload, this.signature)
       : headers = Map.unmodifiable(_decode(encodedHeader)),
@@ -151,27 +151,27 @@ class JWT {
   String get algorithm => headers['alg'] ?? '';
 
   /// The issuer of this token (value of standard `iss` claim).
-  String get issuer => _claims['iss'] as String ?? '';
+  String get issuer => _claims['iss'] as String? ?? '';
 
   /// The audience of this token (value of standard `aud` claim).
-  String get audience => _claims['aud'] as String ?? '';
+  String get audience => _claims['aud'] as String? ?? '';
 
   /// The time this token was issued (value of standard `iat` claim).
-  int get issuedAt => _claims['iat'] as int ?? 0;
+  int get issuedAt => _claims['iat'] as int? ?? 0;
 
   /// The expiration time of this token (value of standard `exp` claim).
-  int get expiresAt => _claims['exp'] as int ?? 0;
+  int get expiresAt => _claims['exp'] as int? ?? 0;
 
   /// The time before which this token must not be accepted (value of standard
   /// `nbf` claim).
-  int get notBefore => _claims['nbf'] as int ?? 0;
+  int get notBefore => _claims['nbf'] as int? ?? 0;
 
   /// Identifies the principal that is the subject of this token (value of
   /// standard `sub` claim).
-  String get subject => _claims['sub'] as String ?? '';
+  String get subject => _claims['sub'] as String? ?? '';
 
   /// Unique identifier of this token (value of standard `jti` claim).
-  String get id => _claims['jti'] as String ?? '';
+  String get id => _claims['jti'] as String? ?? '';
 
   @override
   String toString() {
@@ -188,7 +188,7 @@ class JWT {
   /// Returns `true` if signature is valid and `false` otherwise.
   bool verify(JWTRsaSha256Signer signer) {
     final body = utf8.encode('$encodedHeader.$encodedPayload');
-    final sign = base64Url.decode(_base64Padded(signature));
+    final sign = base64Url.decode(_base64Padded(signature!));
     return signer.verify(body, sign);
   }
 

@@ -11,9 +11,9 @@ final loggerContextKey = Context.makeKey();
 
 class LogRequests {
   DateTime _startTime = DateTime.now().toUtc();
-  DateTime _endTime;
-  String _method;
-  String _path;
+  late DateTime _endTime;
+  String? _method;
+  String? _path;
 
   LogRequests(Request request) {
     _method = request.method;
@@ -54,16 +54,16 @@ String _errorMessages(Response res, bool isOn) {
   }
 }
 
-ResponseMiddleware loggerOut({Logger logger: null, bool messages: false}) {
-  return (Response res) async {
+ResponseMiddleware loggerOut({Logger? logger: null, bool messages: false}) {
+  return (Response? res) async {
     if (logger == null) logger = _defaultLogger;
-    final log = res.context.tryGet<LogRequests>(loggerContextKey);
+    final log = res!.context.tryGet<LogRequests>(loggerContextKey)!;
     log.end();
     if (res.statusCode < 200 || res.statusCode > 299) {
-      logger(
+      logger!(
           '[ERROR] ${res.statusCode} ${log.message()}${_messages(res, messages)}${_errorMessages(res, messages)}');
     } else {
-      logger('${res.statusCode} ${log.message()}${_messages(res, messages)}');
+      logger!('${res.statusCode} ${log.message()}${_messages(res, messages)}');
     }
     return res;
   };
