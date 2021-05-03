@@ -38,37 +38,22 @@ class Route {
     return m != null && m.rest.hasEmptyPath;
   }
 
-  void addSync(
-      {RequestMiddleware pre,
-      ResponseMiddleware post,
-      Handler error,
-      bool useAlways: false}) {
+  void addOnRequest(RequestMiddleware requestMiddleware,
+      {bool runAsync = false, bool useAlways = false}) {
     _pipeline = _pipeline.clone();
-    _pipeline.use(Middleware(
-        onRequest: pre, onResponse: post, error: error, useAlways: useAlways));
+    _pipeline.onRequest(requestMiddleware,
+        runAsync: runAsync, useAlways: useAlways);
   }
 
-  void addAsync(
-      {RequestMiddleware pre,
-      ResponseMiddleware post,
-      Handler error,
-      bool useAlways: false}) {
+  void addOnResponse(ResponseMiddleware responseMiddleware,
+      {bool runAsync = false, bool useAlways = false}) {
     _pipeline = _pipeline.clone();
-    _pipeline.use(Middleware(
-        onRequest: pre,
-        onResponse: post,
-        error: error,
-        runAsync: true,
-        useAlways: useAlways));
-  }
-
-  void add(Middleware middleware) {
-    _pipeline = _pipeline.clone();
-    _pipeline.use(middleware);
+    _pipeline.onResponse(responseMiddleware,
+        runAsync: runAsync, useAlways: useAlways);
   }
 
   void guard(Guard guard) {
-    _pipeline = _pipeline.clone(GuardBuilder(guard));
+    _pipeline = _pipeline.clone(guard);
   }
 
   Future<Response> serve(Request req) async {

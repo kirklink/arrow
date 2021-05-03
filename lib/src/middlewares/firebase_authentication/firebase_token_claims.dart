@@ -1,19 +1,19 @@
 class FirebaseTokenClaims {
-  String uid;
-  DateTime authExpiry;
-  String email;
-  bool emailVerified;
-  bool active;
+  final String uid;
+  final DateTime authExpiry;
+  final String email;
+  final bool emailVerified;
 
-  FirebaseTokenClaims();
+  FirebaseTokenClaims(
+      this.uid, this.email, this.emailVerified, this.authExpiry);
 
   factory FirebaseTokenClaims.fromJson(Map<String, Object> json) {
-    return FirebaseTokenClaims()
-      ..uid = json['sub'] as String
-      ..email = json['email'] as String
-      ..emailVerified = json['email_verified'] as bool
-      ..authExpiry =
-          DateTime.fromMillisecondsSinceEpoch(((json['exp'] as int) * 1000));
+    return FirebaseTokenClaims(
+        json['sub'] as String ?? '',
+        json['email'] as String ?? '',
+        json['email_verified'] as bool ?? false,
+        DateTime.fromMillisecondsSinceEpoch(
+            ((json['exp'] as int ?? 0) * 1000)));
   }
 
   Map<String, Object> toJson() {

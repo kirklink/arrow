@@ -23,13 +23,13 @@ class Cors {
   final List<String> exposedHeaders;
 
   Cors(
-      {List<String> allowedOrigins,
-      List<String> allowedHeaders,
-      List<String> allowedMethods,
+      {List<String> allowedOrigins = const [],
+      List<String> allowedHeaders = const [],
+      List<String> allowedMethods = const [],
       this.maxAge = 0,
       this.allowCredentials = false,
       this.exposedHeaders = const []}) {
-    if (allowedHeaders != null) {
+    if (allowedHeaders.isNotEmpty) {
       if (allowedHeaders.contains('*')) {
         _allowAllHeaders = true;
       } else {
@@ -40,7 +40,7 @@ class Cors {
       _allowedHeaders = _defaultHeaders;
     }
 
-    if (allowedMethods != null) {
+    if (allowedMethods.isNotEmpty) {
       if (allowedMethods.contains('*')) {
         _allowAllMethods = true;
       } else {
@@ -50,7 +50,7 @@ class Cors {
       _allowedMethods = _defaultMethods;
     }
 
-    if (allowedOrigins != null) {
+    if (allowedOrigins.isNotEmpty) {
       if (allowedOrigins.any((e) => e == '*')) {
         _allowAllOrigins = true;
       } else {
@@ -104,10 +104,9 @@ class Cors {
 
 Request handlePreFlight(Request req, Cors cors) {
   if (req.method != 'OPTIONS') {
-    var res = req.response;
-    res.messenger
+    req.messenger
         .addError(('[cors] Preflight aborted. ${req.method}!="OPTIONS'));
-    res.send.serverError();
+    req.respond.serverError();
     return req;
   }
 
@@ -119,24 +118,22 @@ Request handlePreFlight(Request req, Cors cors) {
   final origin = Uri.tryParse(req.headers.value('Origin') ?? '');
 
   if (origin == null || !origin.hasScheme || !origin.hasAuthority) {
-    req.response.messenger.addError(
+    req.messenger.addError(
         ('[cors] Preflight aborted. Could not determine the origin.'));
   }
 
   req.innerRequest.response.headers.add(HttpHeaders.varyHeader, 'Origin');
 
   if (!cors.isAllowedOrigin(origin.origin)) {
-    var res = req.response;
-    res.messenger.addError('[cors] Preflight aborted. Not an allowed origin.');
-    res.send.badRequest();
+    req.messenger.addError('[cors] Preflight aborted. Not an allowed origin.');
+    req.respond.badRequest();
     return req;
   }
 
   final method = req.headers.value('Access-Control-Request-Method') ?? '';
   if (method.isEmpty || !cors.isAllowedMethod(method)) {
-    var res = req.response;
-    res.messenger.addError('[cors] Preflight aborted. Not an allowed method.');
-    res.send.badRequest();
+    req.messenger.addError('[cors] Preflight aborted. Not an allowed method.');
+    req.respond.badRequest();
     return req;
   }
 
@@ -146,9 +143,8 @@ Request handlePreFlight(Request req, Cors cors) {
       split.map((e) => recase.ReCase(e.trim()).headerCase).toList();
 
   if (parsedHeaders.length == 0 || !cors.areAllowedHeaders(parsedHeaders)) {
-    var res = req.response;
-    res.messenger.addError('[cors] Preflight aborted. Not an allowed header.');
-    res.send.badRequest();
+    req.messenger.addError('[cors] Preflight aborted. Not an allowed header.');
+    req.respond.badRequest();
     return req;
   }
 
@@ -171,7 +167,7 @@ Request handlePreFlight(Request req, Cors cors) {
         .add('Access-Control-Max-Age', cors.maxAge.toString());
   }
 
-  req.response.send.code(200);
+  req.respond.code(200);
   req.cancel();
   return req;
 }
@@ -182,30 +178,27 @@ Request handleActualRequest(Request req, Cors cors) {
   final origin = Uri.tryParse(req.headers.value('Origin') ?? '');
 
   if (origin == null || !origin.hasScheme || !origin.hasAuthority) {
-    req.response.messenger.addError(
+    req.messenger.addError(
         ('[cors] Preflight aborted. Could not determine the origin.'));
   }
 
   if (origin == null || origin == '') {
-    var res = req.response;
-    res.messenger.addError('[cors] Actual request aborted. Empty origin.');
-    res.send.badRequest();
+    req.messenger.addError('[cors] Actual request aborted. Empty origin.');
+    req.respond.badRequest();
     return req;
   }
 
   if (!cors.isAllowedOrigin(origin.origin)) {
-    var res = req.response;
-    res.messenger.addError(
+    req.messenger.addError(
         '[cors] Actual request aborted. Not an allowed origin: $origin');
-    res.send.badRequest();
+    req.respond.badRequest();
     return req;
   }
 
   if (!cors.isAllowedMethod(req.method)) {
-    var res = req.response;
-    res.messenger.addError(
+    req.messenger.addError(
         '[cors] Actual request aborted. Not an allowed method: ${req.method}');
-    res.send.badRequest();
+    req.respond.badRequest();
     return req;
   }
 

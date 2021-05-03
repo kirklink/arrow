@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'package:arrow/arrow.dart';
 import 'package:uri/uri.dart';
 
 import 'request.dart';
 import 'response.dart';
-import 'middleware.dart';
 import 'handler.dart';
 import 'route.dart';
 import 'pipeline.dart';
@@ -16,19 +16,20 @@ class Router {
   String _pattern = '';
   UriTemplate _template;
   UriParser _parser;
+  final bool _isChild;
 
   Pipeline _pipeline = Pipeline();
 
-  List<Router> _childRouters = List<Router>();
+  List<Router> _childRouters = <Router>[];
   Map<String, List<Route>> _routeTree = Map<String, List<Route>>();
 
-  Route _notFoundDefault;
-  Route _notFoundCustom;
+  var _notFoundPipeline = Pipeline();
 
-  Recoverer _recover;
+  Recoverer _recoverer = _defaultRecoverer;
+  final bool _shouldRecover;
 
   /// A [Router] is created to specify the URIs (routes) that the server can handle. Routers
-  /// take [Middleware], which are functions that are executed on [Request]s
+  /// take middleware, which are functions that are executed on [Request]s
   /// ([RequestMiddleware]) and [Response]es ([ResponseMiddleware]). Routers also
   /// take a [Handler], which is the function to execute for the specified
   /// route.
@@ -37,7 +38,7 @@ class Router {
   /// 2. Asynchronous [RequestMiddleware] asynchronously in no guaranteed order until they are all completed
   /// 3. The request [Handler] which initiates the response
   /// 4. Asynchronous [ResponseMiddleware] asynchronously in no guaranteed order until they are all completed
-  /// 5. Synchronous [ResponseMiddleware] in the reverse order they are added to the [Router]
+  /// 5. Synchronous [ResponseMiddleware] in the order they are added to the [Router]
   /// A [Router] can also be created as a group, which is a sub-router for routes
   /// that have the same partial URIs. These groups can inherit or have their own
   /// middleware stack.
@@ -45,20 +46,21 @@ class Router {
   /// (i.e. 404 errors) and/or a [Recoverer] from unhandled errors and exceptions.
   Router(
       {Pipeline notFoundPipeline,
-      Handler notFoundHandler,
-      Pipeline serverErrorPipeline,
-      Handler serverErrorHandler}) {
-    if (notFoundPipeline != null && notFoundHandler != null) {
-      _notFoundCustom = Route('GET', '', notFoundHandler, notFoundPipeline);
-    } else if (notFoundPipeline == null && notFoundHandler == null) {
-      _notFoundDefault = Route('GET', '', _notFoundDefaultHandler, _pipeline);
-    } else {
-      throw ArgumentError(
-          'Pipeline and Handler must be provided to set up the Not Found (404) route.');
+      bool shouldRecover = true,
+      Recoverer recoverer})
+      : _isChild = false,
+        _shouldRecover = shouldRecover {
+    if (notFoundPipeline != null) {
+      _notFoundPipeline = notFoundPipeline;
+    }
+    if (recoverer != null) {
+      _recoverer = recoverer;
     }
   }
 
-  Router._group(String pattern, this._pipeline) {
+  Router._group(
+      String pattern, this._pipeline, this._shouldRecover, this._recoverer)
+      : _isChild = true {
     _pattern = _formatPattern(pattern);
     _template = UriTemplate(_pattern);
     _parser = UriParser(_template, queryParamsAreOptional: true);
@@ -70,7 +72,8 @@ class Router {
   /// or completely cleared.
   Router group(String pattern) {
     pattern = _formatPattern(pattern);
-    Router child = Router._group(_pattern + pattern, _pipeline.clone());
+    Router child = Router._group(
+        _pattern + pattern, _pipeline.clone(), _shouldRecover, _recoverer);
     _childRouters.add(child);
     return child;
   }
@@ -93,24 +96,44 @@ class Router {
     }
   }
 
-  /// Add a [Middleware] to this Router's middleware stack.
-  void use(Middleware middleware) {
+  /// Add a [RequestMiddleware] to this router's middleware stack
+  void onRequest(RequestMiddleware requestMiddleware,
+      {bool runAsync = false, bool useAlways = false}) {
     if (!_pipelineIsClosed()) {
-      _pipeline.use(middleware);
+      _pipeline.onRequest(requestMiddleware,
+          runAsync: runAsync, useAlways: useAlways);
+    }
+  }
+
+  /// Add a [ResponseMiddleware] to this router's middleware stack
+  void onResponse(ResponseMiddleware responseMiddleware,
+      {bool runAsync = false, bool useAlways = false}) {
+    if (!_pipelineIsClosed()) {
+      _pipeline.onResponse(responseMiddleware,
+          runAsync: runAsync, useAlways: useAlways);
     }
   }
 
   /// Removes all the [Middleware] from the stack. Useful for clearing and
   /// then redefining the middleware for a router group.
-  void clearMiddleware() {
+  void clearPipeline() {
     _pipeline = Pipeline();
   }
 
+  void pipeline(Pipeline pipeline) {
+    _pipeline = pipeline;
+  }
+
+  // Could inject a pipeline into the route function
+  // Would it replace the pipeline in progress of being built?
+  // Could also have a router.pipeline(Pipeline) function that replaces
+  // whatever is already stacked in the pipeline (does that make sense?)
+
   /// Create a GET route with the specified URI pattern and handler
-  Route get(String pattern, Handler endpoint) {
+  Route get(String pattern, Handler endpoint, {Pipeline pipeline}) {
     pattern = _formatPattern(pattern);
-    Route route =
-        Route(RouterMethods.GET, _pattern + pattern, endpoint, _pipeline);
+    Route route = Route(
+        RouterMethods.GET, _pattern + pattern, endpoint, pipeline ?? _pipeline);
     _storeRouteInTree(RouterMethods.GET, route);
     return route;
   }
@@ -142,24 +165,24 @@ class Router {
     return route;
   }
 
-  Future<Response> _notFoundDefaultHandler(Request req) async {
-    return req.response.send.notFound();
+  static Future<Response> _notFoundHandler(Request req) async {
+    return req.respond.notFound();
   }
 
   /// Add a custom handler to execute when a route is not found. By default,
   /// the router simply returns a 404 error.
-  Route notFound(Handler handler) {
-    if (_notFoundCustom != null)
-      throw Exception('Custom NOT_FOUND route is already set.');
-    if (_notFoundDefault == null)
-      throw Exception(
-          'Something went wrong. Cannot add NOT_FOUND to a child router. This is a bug.');
-    _notFoundCustom = Route(RouterMethods.GET, '', handler, _pipeline);
-    return _notFoundCustom;
-  }
+  // Route notFound(Handler handler) {
+  //   if (_notFoundCustom != null)
+  //     throw Exception('Custom NOT_FOUND route is already set.');
+  //   if (_notFoundDefault == null)
+  //     throw Exception(
+  //         'Something went wrong. Cannot add NOT_FOUND to a child router. This is a bug.');
+  //   _notFoundCustom = Route(RouterMethods.GET, '', handler, _pipeline);
+  //   return _notFoundCustom;
+  // }
 
-  Response _defaultRecoverer(Request req,
-      {Exception exception, StackTrace stacktrace, Error error}) {
+  static Future<Response> _defaultRecoverer(Request req,
+      {Exception exception, StackTrace stacktrace, Error error}) async {
     print('!! -- Recover -- !!');
     print('Exception:');
     print(exception);
@@ -168,70 +191,62 @@ class Router {
     print('Stacktrace:');
     print(stacktrace);
     print('-- End Recover --');
-    var res = req.response;
-    res.send.serverError();
-    return res;
+    return req.respond.serverError();
   }
 
   /// Add a [Recoverer] function to execute when an unhandled exception
   /// or error occurs. If added but a custom Recoverer is not provided, the default
   /// Recover prints the Exception/Error message and stack trace.
-  void recover([Recoverer recover]) {
-    _recover = recover == null ? _defaultRecoverer : recover;
-    return;
-  }
+  // void recover([Recoverer recoverer]) {
+  //   if (recoverer != null) {
+  //     _recoverer = recoverer;
+  //   }
+  //   return;
+  // }
 
   void _storeRouteInTree(method, route) {
     if (!_routeTree.containsKey(method)) {
-      _routeTree[method] = List<Route>();
+      _routeTree[method] = <Route>[];
     }
     _routeTree[method].add(route);
   }
 
   Future<Response> _serve(Request req) async {
     if (req.isAlive && _childRouters.length > 0) {
-      var childRouter = await _findChildRouter(req);
+      final childRouter = await _findChildRouter(req);
       if (childRouter != null) {
-        var res = childRouter._serve(req);
-        return res;
+        return childRouter._serve(req);
       }
     }
 
     if (req.isAlive && _routeTree.length > 0) {
       var route = await _findRoute(req);
-      if (route != null) {
-        var res = await route.serve(req);
-        return res;
+      if (route == null) {
+        req.cancel();
+        return _notFoundPipeline.serve(req, _notFoundHandler,
+            forceHandlerToRun: true);
+      } else {
+        return route.serve(req);
       }
     }
-    return null;
+    return req.respond.serverError();
   }
 
   Future<Response> serve(Request req) async {
-    Response res;
     try {
-      res = await _serve(req);
+      return await _serve(req);
     } on Error catch (e, s) {
-      if (_recover == null) {
+      if (_recoverer == null) {
         rethrow;
       } else {
-        return await _recover(req, error: e, stacktrace: s);
+        return await _recoverer(req, error: e, stacktrace: s);
       }
     } catch (e, s) {
-      if (_recover == null) {
+      if (_recoverer == null) {
         rethrow;
       } else {
-        return await _recover(req, exception: e, stacktrace: s);
+        return await _recoverer(req, exception: e, stacktrace: s);
       }
-    }
-    if (res == null) {
-      if (_notFoundCustom != null) {
-        return await _notFoundCustom.serve(req);
-      } else {
-        return await _notFoundDefault.serve(req);
-      }
-    } else {
-      return res;
     }
   }
 
@@ -269,5 +284,9 @@ class Router {
       pattern = pattern.substring(0, pattern.length - 1);
     }
     return pattern;
+  }
+
+  static Pipeline createPipeline() {
+    return Pipeline();
   }
 }

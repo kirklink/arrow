@@ -8,8 +8,7 @@ Future<Request> enforceJsonContentType(Request req) async {
     if (contentType != null) {
       req.messenger
           .addError('Content type must be not be set on GET and DELETE.');
-      var res = req.response;
-      res.send.badRequest();
+      req.respond.badRequest();
       return req;
     }
     ;
@@ -18,8 +17,7 @@ Future<Request> enforceJsonContentType(Request req) async {
     if (contentType == null || contentType.mimeType != 'application/json') {
       req.messenger
           .addError('Content type must be application/json on POST and PUT.');
-      var res = req.response;
-      res.send.badRequest();
+      req.respond.badRequest();
       return req;
     }
   }

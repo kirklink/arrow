@@ -9,9 +9,7 @@ class Server {
   Router _router;
   int _port;
 
-  Server(this._router, int port) {
-    this._port = port != null ? port : 8080;
-  }
+  Server(this._router, this._port);
 
   Future start({bool forceSSL: false}) async {
     final _server = await io.HttpServer.bind(io.InternetAddress.anyIPv4, _port);
@@ -25,8 +23,7 @@ class Server {
             status: io.HttpStatus.movedPermanently);
       } else {
         try {
-          _router.serve(Request(req)).then((Response res) {
-            res.complete();
+          _router.serve(Request(req)).then((_) {
             req.response.close();
           });
         } catch (e) {

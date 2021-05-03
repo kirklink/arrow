@@ -1,20 +1,20 @@
-import 'message.dart';
-import 'responder.dart';
 import 'request.dart';
+import 'context.dart';
+import 'internal_messenger.dart';
 
-class Response extends Message {
-  Responder _responder;
+class Response {
+  final Request request;
+  final Map<String, dynamic> data;
+  final Map<String, String> errors;
 
-  Response(Request req)
-      : super(req.innerRequest, req.messenger, req.context, req.alive) {
-    _responder = Responder(this);
-  }
+  Response(this.request,
+      {this.data = const <String, dynamic>{},
+      this.errors = const <String, String>{}});
 
-  Responder get send => _responder;
+  bool get isAlive => request.isAlive;
+  int get statusCode => request.innerRequest.response.statusCode;
+  Context get context => request.context;
+  InternalMessenger get messenger => request.messenger;
 
-  int get statusCode => _responder.statusCode;
-
-  Future complete() async {
-    await _responder.complete();
-  }
+  void cancel() => request.cancel();
 }

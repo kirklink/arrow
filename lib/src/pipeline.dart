@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'middleware.dart';
+import 'request_middleware.dart';
+import 'response_middleware.dart';
 import 'handler.dart';
 import 'request.dart';
 import 'response.dart';
@@ -10,11 +11,11 @@ typedef Future<Request> _WrappedRequestHandler(Request req);
 typedef Future<Response> _WrappedResponseHandler(Response res);
 
 class Pipeline {
-  final _syncRequestHandlers = List<_WrappedRequestHandler>();
-  final _syncResponseHandlers = List<_WrappedResponseHandler>();
-  final _asyncRequestHandlers = List<_WrappedRequestHandler>();
-  final _asyncResponseHandlers = List<_WrappedResponseHandler>();
-  final GuardBuilder _guard;
+  final _syncRequestHandlers = <_WrappedRequestHandler>[];
+  final _syncResponseHandlers = <_WrappedResponseHandler>[];
+  final _asyncRequestHandlers = <_WrappedRequestHandler>[];
+  final _asyncResponseHandlers = <_WrappedResponseHandler>[];
+  final Guard _guard;
 
   Pipeline([this._guard]);
 
@@ -25,18 +26,19 @@ class Pipeline {
     _asyncResponseHandlers.addAll(List.from(src._asyncResponseHandlers));
   }
 
-  Pipeline clone([GuardBuilder guard]) {
+  Pipeline clone([Guard guard]) {
     return Pipeline._clone(this, guard);
   }
 
-  _WrappedRequestHandler _wrapRequestHandler(Middleware middleware) {
+  _WrappedRequestHandler _wrapRequestHandler(
+      RequestMiddleware middleware, bool useAlways) {
     return (Request req) async {
-      if (middleware.useAlways) {
-        return Future(() async => middleware.requestMiddleware(req));
+      if (useAlways) {
+        return Future(() async => middleware(req));
       } else {
         return Future(() async {
           if (req.isAlive) {
-            return middleware.requestMiddleware(req);
+            return middleware(req);
           } else {
             return req;
           }
@@ -45,14 +47,15 @@ class Pipeline {
     };
   }
 
-  _WrappedResponseHandler _wrapResponseHandler(Middleware middleware) {
+  _WrappedResponseHandler _wrapResponseHandler(
+      ResponseMiddleware middleware, bool useAlways) {
     return (Response res) async {
-      if (middleware.useAlways) {
-        return Future(() async => middleware.responseMiddleware(res));
+      if (useAlways) {
+        return Future(() async => middleware(res));
       } else {
         return Future(() async {
           if (res.isAlive) {
-            return middleware.responseMiddleware(res);
+            return middleware(res);
           } else {
             return res;
           }
@@ -61,31 +64,35 @@ class Pipeline {
     };
   }
 
-  void use(Middleware middleware) {
-    if (middleware.runAsync) {
-      if (middleware.requestMiddleware != null) {
-        _asyncRequestHandlers.add(_wrapRequestHandler(middleware));
-      }
-      if (middleware.responseMiddleware != null) {
-        _asyncResponseHandlers.insert(0, _wrapResponseHandler(middleware));
-      }
+  void onRequest(RequestMiddleware requestMiddleware,
+      {bool runAsync = false, bool useAlways = false}) {
+    if (runAsync) {
+      _asyncRequestHandlers
+          .add(_wrapRequestHandler(requestMiddleware, useAlways));
     } else {
-      if (middleware.requestMiddleware != null) {
-        _syncRequestHandlers.add(_wrapRequestHandler(middleware));
-      }
-      if (middleware.responseMiddleware != null) {
-        _syncResponseHandlers.insert(0, _wrapResponseHandler(middleware));
-      }
+      _syncRequestHandlers
+          .add(_wrapRequestHandler(requestMiddleware, useAlways));
     }
   }
 
-  Future<Response> serve(Request req, Handler endpoint) async {
+  void onResponse(ResponseMiddleware responseMiddleware,
+      {bool runAsync = false, bool useAlways = false}) {
+    if (runAsync) {
+      _asyncResponseHandlers
+          .add(_wrapResponseHandler(responseMiddleware, useAlways));
+    } else {
+      _syncResponseHandlers
+          .add(_wrapResponseHandler(responseMiddleware, useAlways));
+    }
+  }
+
+  Future<Response> serve(Request req, Handler endpoint,
+      {bool forceHandlerToRun = false}) async {
     if (_guard != null) {
-      final guard = await _guard.evaluate(req);
-      if (!guard.allows) {
-        req.response.send.forbidden();
+      final guardAllows = await _guard(req);
+      if (!guardAllows) {
+        return req.respond.forbidden();
       }
-      req = guard.request;
     }
 
     if (_syncRequestHandlers.isNotEmpty) {
@@ -96,13 +103,9 @@ class Pipeline {
       req = await _processAsyncRequestHandlers(req, _asyncRequestHandlers);
     }
 
-    Response res;
-    if (req.isAlive) {
-      res = await endpoint(req);
-    } else {
-      res = req.response;
-    }
-    ;
+    var res = (req.isAlive || forceHandlerToRun)
+        ? await endpoint(req)
+        : req.respond.serverError();
 
     if (_asyncResponseHandlers.isNotEmpty) {
       res = await _processAsyncResponseHandlers(res, _asyncResponseHandlers);

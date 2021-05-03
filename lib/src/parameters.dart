@@ -5,19 +5,15 @@ class ParametersException implements Exception {
 }
 
 class Parameters {
-  Map<String, String> _parameters;
+  final _parameters = <String, String>{};
 
   String get(String key) {
-    if (!_parameters.containsKey(key)) {
-      return '';
-    } else {
-      return _parameters[key] ?? '';
-    }
+    return _parameters[key] ?? '';
   }
 
   void load(Map<String, String> srcParameters) {
-    if (_parameters != null)
+    if (_parameters.isNotEmpty)
       throw ParametersException('Parameters already loaded.');
-    _parameters = Map<String, String>.from(srcParameters);
+    _parameters.addAll(Map<String, String>.from(srcParameters));
   }
 }

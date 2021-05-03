@@ -1,43 +1,37 @@
 import 'dart:io';
 import 'package:uri/uri.dart' as u;
 
-import 'message.dart';
-import 'response.dart';
+import 'arrow_exception.dart';
+import 'responder.dart';
 import 'parameters.dart';
 import 'content.dart';
+import 'context.dart';
+import 'internal_messenger.dart';
 
-class Request extends Message {
-  Parameters _params = Parameters();
+class Request {
   Content _content;
-  Response _response;
+  final HttpRequest innerRequest;
+  final context = Context();
+  final messenger = InternalMessenger();
+  final params = Parameters();
+  bool _isAlive = true;
+  Responder _responder = Responder();
 
-  Request(HttpRequest innerRequest) : super(innerRequest);
+  Request(this.innerRequest);
+
+  bool get isAlive => _isAlive;
+  void cancel() => _isAlive = false;
+  Content get content => _content;
 
   // Convenience accessors.
   String get method => innerRequest.method;
-
   Uri get uri => u.UriBuilder.fromUri(innerRequest.uri).build();
-
   HttpHeaders get headers => innerRequest.headers;
 
-  Parameters get params => _params;
-
-  // New functionality.
-  Content get content => _content;
-
-  // Alive get alive => _alive;
-
   set content(Content content) {
-    if (_content != null) throw ContentException('Content is already loaded.');
+    if (_content != null) throw ArrowException('Content is already loaded.');
     _content = content;
   }
 
-  Response get response {
-    if (_response == null) {
-      _response = Response(this);
-      return _response;
-    } else {
-      return _response;
-    }
-  }
+  Responder get respond => _responder.go(this);
 }

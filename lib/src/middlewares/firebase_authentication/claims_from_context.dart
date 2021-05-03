@@ -1,14 +1,13 @@
 import 'package:arrow/src/request.dart';
 import 'package:arrow/src/middlewares/firebase_authentication/firebase_token_claims.dart';
 import 'package:arrow/src/middlewares/firebase_authentication/firebase_authentication.dart'
-    show firebaseDefaultTokenClaimsContext, firebaseRawTokenClaimsContext;
+    show firebaseDefaultClaimsContextId, firebaseRawClaimsContextId;
 
-FirebaseTokenClaims getFirebaseDefaultTokenClaims(Request req) {
+FirebaseTokenClaims getFirebaseDefaultClaims(Request req) {
   return req.context
-      .get<FirebaseTokenClaims>(firebaseDefaultTokenClaimsContext);
+      .tryGet<FirebaseTokenClaims>(firebaseDefaultClaimsContextId);
 }
 
-Map<String, Object> getFirebaseRawTokenClaims(Request req) {
-  return (req.context.get(firebaseRawTokenClaimsContext)
-      as Map<String, Object>);
+Map<String, dynamic> getFirebaseRawTokenClaims(Request req) {
+  return req.context.tryGet<Map<String, dynamic>>(firebaseRawClaimsContextId);
 }

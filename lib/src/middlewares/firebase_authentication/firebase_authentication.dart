@@ -1,4 +1,4 @@
-import 'dart:convert' show json, base64, utf8;
+import 'dart:convert' show json;
 import 'dart:io' show CertificateException;
 import 'package:http/http.dart' as http;
 
@@ -23,8 +23,8 @@ String _issuer(String currentProject) {
   return 'https://securetoken.google.com/${currentProject}';
 }
 
-const firebaseDefaultTokenClaimsContext = '#firebase_default_token_claims';
-const firebaseRawTokenClaimsContext = '#firebase_raw_token_claims';
+const firebaseDefaultClaimsContextId = '#firebase_default_token_claims';
+const firebaseRawClaimsContextId = '#firebase_raw_token_claims';
 
 // String _audience() {
 //   return EnvironmentInfo.currentProject;
@@ -84,24 +84,23 @@ class FirebaseCertificate {
 RequestMiddleware firebaseAuthentication(String gcpProjectName,
     {VerifyClaims verifier,
     String verifyFailMessage = '',
-    bool setDefaultClaimsOnContext = false}) {
+    bool setDefaultClaimsOnContext = true}) {
   return (Request req) async {
     final authHeader = req.headers.value('Authorization');
 
     if (authHeader == null) {
-      req.response.send
+      req.respond
           .unauthorized(msg: 'An authorization header was not provided.');
       return req;
     }
 
     if (!authHeader.startsWith('Bearer ')) {
-      req.response.send
-          .unauthorized(msg: 'Invalid authorization header format.');
+      req.respond.unauthorized(msg: 'Invalid authorization header format.');
       return req;
     }
     final split = authHeader.split(' ');
     if (split.length != 2) {
-      req.response.send.unauthorized(
+      req.respond.unauthorized(
           msg:
               'Invalid authorization header format. Send as "Bearer {TOKEN}".');
       return req;
@@ -109,7 +108,7 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
     final token = split[1];
     final tokenParts = token.split('.');
     if (tokenParts.length != 3) {
-      req.response.send.unauthorized(
+      req.respond.unauthorized(
           msg: 'Invalid authorization header format. Not enough jwt segments.');
       return req;
     }
@@ -117,13 +116,13 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
     final decodedToken = JWT.parse(token);
 
     if (decodedToken.algorithm != 'RS256') {
-      req.response.send.unauthorized(msg: 'Invalid authorization algorithm.');
+      req.respond.unauthorized(msg: 'Invalid authorization algorithm.');
       return req;
     }
     final kid = decodedToken.headers['kid'] ?? '';
 
     if (kid.isEmpty) {
-      req.response.send.unauthorized(msg: 'Invalid kid claim.');
+      req.respond.unauthorized(msg: 'Invalid kid claim.');
       return req;
     }
 
@@ -159,46 +158,43 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
       certificate = FirebaseCertificate(expiresAt, certs);
     }
 
-    var isValid = false;
     try {
       final publicKey = certificate.certificate[kid];
-      final signer = JWTRsaSha256Signer(publicKey: publicKey);
-      isValid = decodedToken.verify(signer);
+      final signer = JWTRsaSha256Signer(publicKey);
+      final isValid = decodedToken.verify(signer);
+      if (!isValid) {
+        req.respond.unauthorized(msg: 'The jwt token was not valid.');
+        return req;
+      }
     } catch (e) {
-      req.response.send
-          .unauthorized(msg: 'An unknown authorization error occurred.');
-      return req;
-    }
-
-    if (!isValid) {
-      req.response.send.unauthorized(msg: 'The jwt token was not valid.');
+      req.respond.unauthorized(msg: 'An unknown authorization error occurred.');
       return req;
     }
 
     if (decodedToken.expiresAt <=
         DateTime.now().millisecondsSinceEpoch / 1000) {
-      req.response.send.unauthorized(msg: 'Invalid exp claim.');
+      req.respond.unauthorized(msg: 'Invalid exp claim.');
       return req;
     }
     if (decodedToken.issuedAt >= DateTime.now().millisecondsSinceEpoch / 1000) {
-      req.response.send.unauthorized(msg: 'Invalid iat claim.');
+      req.respond.unauthorized(msg: 'Invalid iat claim.');
       return req;
     }
     if (decodedToken.audience != gcpProjectName) {
-      req.response.send.unauthorized(msg: 'Invalid aud claim.');
+      req.respond.unauthorized(msg: 'Invalid aud claim.');
       return req;
     }
     if (decodedToken.issuer != _issuer(gcpProjectName)) {
-      req.response.send.unauthorized(msg: 'Invalid iss claim.');
+      req.respond.unauthorized(msg: 'Invalid iss claim.');
       return req;
     }
-    if (decodedToken.subject == null || decodedToken.subject.isEmpty) {
-      req.response.send.unauthorized(msg: 'Invalid sub claim.');
+    if (decodedToken.subject.isEmpty) {
+      req.respond.unauthorized(msg: 'Invalid sub claim.');
       return req;
     }
     if (decodedToken.claims['auth_time'] >=
         DateTime.now().millisecondsSinceEpoch / 1000) {
-      req.response.send.unauthorized(msg: 'Invalid iat claim.');
+      req.respond.unauthorized(msg: 'Invalid iat claim.');
       return req;
     }
 
@@ -212,17 +208,17 @@ RequestMiddleware firebaseAuthentication(String gcpProjectName,
         final failMessage = verifyFailMessage.isNotEmpty
             ? verifyFailMessage
             : 'The claims were not valid.';
-        req.response.send.unauthorized(msg: failMessage);
+        req.respond.unauthorized(msg: failMessage);
         return req;
       }
     }
 
-    req.context.set(firebaseRawTokenClaimsContext, decodedToken.claims);
+    req.context.trySet(firebaseRawClaimsContextId, decodedToken.claims);
 
     if (setDefaultClaimsOnContext) {
       final claims = FirebaseTokenClaims.fromJson(decodedToken.claims);
       req.context
-          .set<FirebaseTokenClaims>(firebaseDefaultTokenClaimsContext, claims);
+          .trySet<FirebaseTokenClaims>(firebaseDefaultClaimsContextId, claims);
     }
 
     return req;

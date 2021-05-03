@@ -1,60 +1,66 @@
 import 'dart:async';
 import 'dart:convert' show utf8, json;
 
+import 'package:arrow/src/request_middleware.dart';
 import 'package:arrow/src/request.dart';
 import 'package:arrow/src/content.dart';
 
 class JsonContent implements Content {
-  Map<String, Object> _content;
+  Map<String, Object> _map = const {};
+  List _list = const [];
 
-  JsonContent(String content) {
-    if (content.trim().isEmpty) {
-      _content = const {};
-    } else {
+  JsonContent(String content, {String listWrapper = ''}) {
+    if (content.trim().isNotEmpty) {
       final c = json.decode(content);
       if (c is Map) {
-        _content = c;
+        _map = c;
       } else if (c is List) {
-        _content = {'data': c};
+        if (listWrapper.isNotEmpty) {
+          _map = {listWrapper: c};
+        } else {
+          _list = c;
+        }
       } else {
         throw FormatException('Body is not an object or list.');
       }
     }
   }
 
-  String get string => json.encode(_content);
-
-  Map<String, Object> get map => _content;
+  String get string => json.encode(_map ?? '');
+  List get list => _list ?? const [];
+  Map<String, Object> get map => _map ?? const {};
 }
 
-Future<Request> readJsonContent(Request req) async {
+RequestMiddleware readJsonContent({String listWrapper = ''}) {
+  return (Request req) async {
+    return _readJsonContent(req, listWrapper: listWrapper);
+  };
+}
+
+Future<Request> _readJsonContent(Request req, {String listWrapper = ''}) async {
   String content = await utf8.decoder.bind(req.innerRequest).join();
   if ((req.method == 'POST' || req.method == 'PUT' || req.method == 'PATCH') &&
       (content == null || content == '')) {
-    var res = req.response;
     req.messenger
         .addError('[readJsonContent] ${req.method} had no content body.');
-    res.send.badRequest(msg: '${req.method} had no content.');
+    req.respond.badRequest(msg: '${req.method} had no content.');
     return req;
   } else if ((req.method == 'GET' || req.method == 'DELETE') &&
       content.isNotEmpty) {
-    final res = req.response;
     req.messenger.addError(
         'readJsonContent ${req.method} should not have content in the body.');
-    res.send.badRequest(msg: '${req.method} should not have a body.');
+    req.respond.badRequest(msg: '${req.method} should not have a body.');
     return req;
   } else {
     try {
       req.content = JsonContent(content != null ? content : '');
     } on FormatException catch (_) {
-      var res = req.response;
-      res.messenger.addError(
+      req.messenger.addError(
           '[readJsonContent] Could not decode bad json format in request.');
-      res.send.badRequest(errors: {'msg': 'Bad json formatting.'});
+      req.respond.badRequest(errors: {'msg': 'Bad json formatting.'});
     } catch (e) {
-      var res = req.response;
-      res.messenger.addError('[readJsonContent] $e');
-      res.send.badRequest(errors: {'msg': 'Problem reading json.'});
+      req.messenger.addError('[readJsonContent] $e');
+      req.respond.badRequest(errors: {'msg': 'Problem reading json.'});
     } finally {
       return req;
     }

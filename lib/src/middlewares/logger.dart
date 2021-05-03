@@ -33,7 +33,7 @@ class LogRequests {
 
 RequestMiddleware loggerIn() {
   return (Request req) async {
-    req.context.set(loggerContextKey, LogRequests(req));
+    req.context.trySet(loggerContextKey, LogRequests(req));
     return req;
   };
 }
@@ -57,7 +57,7 @@ String _errorMessages(Response res, bool isOn) {
 ResponseMiddleware loggerOut({Logger logger: null, bool messages: false}) {
   return (Response res) async {
     if (logger == null) logger = _defaultLogger;
-    var log = res.context.get<LogRequests>(loggerContextKey);
+    final log = res.context.tryGet<LogRequests>(loggerContextKey);
     log.end();
     if (res.statusCode < 200 || res.statusCode > 299) {
       logger(
