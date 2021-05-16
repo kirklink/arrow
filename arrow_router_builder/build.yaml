@@ -1,0 +1,14 @@
+targets:
+  $default:
+    builders:
+      arrow_router_builder:
+        enabled: true
+  
+builders:
+  arrow_router_builder:
+    import: "package:arrow_router_builder/arrow_router_builder.dart"
+    builder_factories: ["ArrowRouterBuilder"]
+    build_extensions: {".dart": [".g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]

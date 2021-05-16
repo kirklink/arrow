@@ -1,0 +1,3 @@
+class ArrowRouter {
+  const ArrowRouter();
+}

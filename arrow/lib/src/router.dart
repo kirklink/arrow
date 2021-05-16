@@ -5,6 +5,7 @@ import 'package:uri/uri.dart';
 import 'request.dart';
 import 'response.dart';
 import 'handler.dart';
+import 'route_builder.dart';
 import 'route.dart';
 import 'pipeline.dart';
 import 'constants.dart';
@@ -16,12 +17,12 @@ class Router {
   String _pattern = '';
   late UriTemplate _template;
   late UriParser _parser;
-  final bool _isChild;
 
   Pipeline _pipeline = Pipeline();
 
   List<Router> _childRouters = <Router>[];
-  Map<String, List<Route>> _routeTree = Map<String, List<Route>>();
+  Map<String, List<RouteBuilder>> _routeTree =
+      Map<String, List<RouteBuilder>>();
 
   var _notFoundPipeline = Pipeline();
 
@@ -48,8 +49,7 @@ class Router {
       {Pipeline? notFoundPipeline,
       bool shouldRecover = true,
       Recoverer? recoverer})
-      : _isChild = false,
-        _shouldRecover = shouldRecover {
+      : _shouldRecover = shouldRecover {
     if (notFoundPipeline != null) {
       _notFoundPipeline = notFoundPipeline;
     }
@@ -59,8 +59,7 @@ class Router {
   }
 
   Router._group(
-      String pattern, this._pipeline, this._shouldRecover, this._recoverer)
-      : _isChild = true {
+      String pattern, this._pipeline, this._shouldRecover, this._recoverer) {
     _pattern = _formatPattern(pattern);
     _template = UriTemplate(_pattern);
     _parser = UriParser(_template, queryParamsAreOptional: true);
@@ -124,43 +123,40 @@ class Router {
     _pipeline = pipeline;
   }
 
-  // Could inject a pipeline into the route function
-  // Would it replace the pipeline in progress of being built?
-  // Could also have a router.pipeline(Pipeline) function that replaces
-  // whatever is already stacked in the pipeline (does that make sense?)
+  void route(Route route) {}
 
   /// Create a GET route with the specified URI pattern and handler
-  Route get(String pattern, Handler endpoint, {Pipeline? pipeline}) {
+  RouteBuilder get(String pattern, Handler endpoint, {Pipeline? pipeline}) {
     pattern = _formatPattern(pattern);
-    Route route = Route(
+    RouteBuilder route = RouteBuilder(
         RouterMethods.GET, _pattern + pattern, endpoint, pipeline ?? _pipeline);
     _storeRouteInTree(RouterMethods.GET, route);
     return route;
   }
 
   /// Create a POST route with the specified URI pattern and handler
-  Route post(String pattern, Handler endpoint) {
+  RouteBuilder post(String pattern, Handler endpoint) {
     pattern = _formatPattern(pattern);
-    Route route =
-        Route(RouterMethods.POST, _pattern + pattern, endpoint, _pipeline);
+    RouteBuilder route = RouteBuilder(
+        RouterMethods.POST, _pattern + pattern, endpoint, _pipeline);
     _storeRouteInTree(RouterMethods.POST, route);
     return route;
   }
 
   /// Create a PUT route with the specified URI pattern and handler
-  Route put(String pattern, Handler endpoint) {
+  RouteBuilder put(String pattern, Handler endpoint) {
     pattern = _formatPattern(pattern);
-    Route route =
-        Route(RouterMethods.PUT, _pattern + pattern, endpoint, _pipeline);
+    RouteBuilder route = RouteBuilder(
+        RouterMethods.PUT, _pattern + pattern, endpoint, _pipeline);
     _storeRouteInTree(RouterMethods.PUT, route);
     return route;
   }
 
   /// Create a DELETE route with the specified URI pattern and handler
-  Route delete(String pattern, Handler endpoint) {
+  RouteBuilder delete(String pattern, Handler endpoint) {
     pattern = _formatPattern(pattern);
-    Route route =
-        Route(RouterMethods.DELETE, _pattern + pattern, endpoint, _pipeline);
+    RouteBuilder route = RouteBuilder(
+        RouterMethods.DELETE, _pattern + pattern, endpoint, _pipeline);
     _storeRouteInTree(RouterMethods.DELETE, route);
     return route;
   }
@@ -206,7 +202,7 @@ class Router {
 
   void _storeRouteInTree(method, route) {
     if (!_routeTree.containsKey(method)) {
-      _routeTree[method] = <Route>[];
+      _routeTree[method] = <RouteBuilder>[];
     }
     _routeTree[method]!.add(route);
   }
@@ -265,10 +261,10 @@ class Router {
     return null;
   }
 
-  Future<Route?> _findRoute(Request req) async {
+  Future<RouteBuilder?> _findRoute(Request req) async {
     var routes = _routeTree[req.method];
     if (routes == null) return null;
-    for (Route route in routes) {
+    for (RouteBuilder route in routes) {
       if (route.canHandle(req.method, req.uri)) {
         return route;
       }

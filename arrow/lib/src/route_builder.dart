@@ -11,9 +11,9 @@ import 'middleware.dart';
 import 'constants.dart' show RouterMethods;
 import 'pipeline.dart';
 
-class Route {
+class RouteBuilder {
   String _pattern;
-  String? _method;
+  late String _method;
   late u.UriTemplate _template;
   late u.UriParser _parser;
   Handler _endpoint;
@@ -21,7 +21,7 @@ class Route {
 
   String get pattern => _pattern;
 
-  Route(String method, this._pattern, Handler this._endpoint,
+  RouteBuilder(String method, this._pattern, Handler this._endpoint,
       Pipeline this._pipeline) {
     if (RouterMethods.allowedMethods.indexOf(method) == -1) {
       throw ArgumentError('Method $method is not allowed in route $_pattern.');

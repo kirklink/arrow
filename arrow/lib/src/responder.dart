@@ -8,21 +8,21 @@ import 'arrow_exception.dart';
 class Responder {
   Request? _request;
   var _complete = false;
-  Response? _response;
+  late final Response _response;
 
   Responder();
 
   // bool get isComplete => _responseObject != null;
   // int get statusCode => _responseObject.statusCode;
   //
-  Response? get response => _response;
+  Response get response => _response;
 
   Responder go(Request request) {
     if (_request == null) _request = request;
     return this;
   }
 
-  Response? ok(
+  Response ok(
       {Map<String, dynamic> data = const <String, dynamic>{},
       bool printResponseObject = false}) {
     if (_complete) {
@@ -40,7 +40,7 @@ class Responder {
     return _response;
   }
 
-  Response? raw(int statusCode, Map<String, dynamic> data) {
+  Response raw(int statusCode, Map<String, dynamic> data) {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
@@ -55,7 +55,7 @@ class Responder {
     return _response;
   }
 
-  Response? code(int statusCode) {
+  Response code(int statusCode) {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
@@ -66,7 +66,7 @@ class Responder {
     return _response;
   }
 
-  Response? unauthorized(
+  Response unauthorized(
       {String msg = 'Unauthorized',
       Map<String, Object> errors = const <String, String>{},
       bool printResponseObject = false}) {
@@ -75,11 +75,12 @@ class Responder {
     }
     final code = io.HttpStatus.unauthorized;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors as Map<String, String>));
+    _response = Response(
+        _errorResponse(_request!, code, msg, errors as Map<String, String>));
     return _response;
   }
 
-  Response? notFound(
+  Response notFound(
       {String msg = 'Not Found',
       Map<String, Object> errors = const <String, String>{},
       bool printResponseObject = false}) {
@@ -88,11 +89,12 @@ class Responder {
     }
     final code = io.HttpStatus.notFound;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors as Map<String, String>));
+    _response = Response(
+        _errorResponse(_request!, code, msg, errors as Map<String, String>));
     return _response;
   }
 
-  Response? forbidden(
+  Response forbidden(
       {String msg = 'Forbidden',
       Map<String, Object> errors = const <String, String>{},
       bool printResponseObject = false}) {
@@ -101,11 +103,12 @@ class Responder {
     }
     final code = io.HttpStatus.forbidden;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors as Map<String, String>));
+    _response = Response(
+        _errorResponse(_request!, code, msg, errors as Map<String, String>));
     return _response;
   }
 
-  Response? badRequest(
+  Response badRequest(
       {String msg = 'Bad Request',
       Map<String, Object> errors = const <String, String>{},
       bool printResponseObject = false}) {
@@ -114,23 +117,24 @@ class Responder {
     }
     final code = io.HttpStatus.badRequest;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors as Map<String, String>));
+    _response = Response(
+        _errorResponse(_request!, code, msg, errors as Map<String, String>));
     return _response;
   }
 
-  Response? serverError() {
+  Response serverError() {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
     final code = io.HttpStatus.internalServerError;
     final msg = 'Server Error';
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, const {}));
+    _response = Response(_errorResponse(_request!, code, msg, const {}));
     return _response;
   }
 
   Request? _errorResponse(
-      Request? request, int code, String msg, Map<String, String> errors) {
+      Request request, int code, String msg, Map<String, String> errors) {
     final wrapped =
         json.encode({"ok": false, "errorMessage": msg, "errors": errors});
     final srcResponse = _request!.innerRequest.response;

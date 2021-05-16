@@ -1,0 +1,14 @@
+targets:
+  $default:
+    builders:
+      arrow_openapi_builder:
+        enabled: true
+  
+builders:
+  arrow_openapi_builder:
+    import: "package:arrow_openapi_builder/arrow_openapi_builder.dart"
+    builder_factories: ["ArrowOpenApiBuilder"]
+    build_extensions: {".dart": [".json"]}
+    auto_apply: dependents
+    build_to: source
+    applies_builders: ["source_gen"]
