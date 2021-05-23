@@ -4,4 +4,6 @@ import 'arrow_openapi_generator.dart';
 
 Builder ArrowOpenApiBuilder(BuilderOptions options) =>
     LibraryBuilder(ArrowOpenApiGenerator(),
-        generatedExtension: '.json', header: '');
+        formatOutput: (String string) => string,
+        generatedExtension: '.yaml',
+        header: '');
