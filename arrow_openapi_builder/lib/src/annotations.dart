@@ -36,7 +36,8 @@ class OpenApiRoute {
 }
 
 class OpenApiModel {
-  const OpenApiModel();
+  final bool isModel;
+  const OpenApiModel(this.isModel);
 }
 
 class OpenApiField {
@@ -44,4 +45,16 @@ class OpenApiField {
   final bool ignoreOnResponse;
   const OpenApiField(
       {this.ignoreOnRequest = false, this.ignoreOnResponse = false});
+}
+
+class ArrowRoute {
+  final String method;
+  final String path;
+  final Type requestModel;
+  final Type responseModel;
+
+  const ArrowRoute.get(this.path, this.requestModel, this.responseModel)
+      : method = 'GET';
+  const ArrowRoute.post(this.path, this.requestModel, this.responseModel)
+      : method = 'POST';
 }

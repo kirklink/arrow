@@ -9,6 +9,7 @@ import 'package:pretty_json/pretty_json.dart' as pj;
 
 import 'annotations.dart';
 import 'arrow_openapi_exception.dart';
+import 'build_definitions.dart';
 
 final _checkForOpenApiRoute = const TypeChecker.fromRuntime(OpenApiRoute);
 final _checkForOpenApiModel = const TypeChecker.fromRuntime(OpenApiModel);
@@ -31,22 +32,22 @@ class OpenApiModelProperty {
   }
 }
 
-class OpenApiModel {
-  final type = 'object';
-  final _properties = <OpenApiModelProperty>[];
+// class OpenApiModel {
+//   final type = 'object';
+//   final _properties = <OpenApiModelProperty>[];
 
-  Map<String, dynamic> toJson() {
-    final r = <String, dynamic>{'type': type};
-    if (_properties.isNotEmpty) {
-      r['properties'] = _properties.map((e) => e.toString()).toList();
-    }
-    return r;
-  }
+//   Map<String, dynamic> toJson() {
+//     final r = <String, dynamic>{'type': type};
+//     if (_properties.isNotEmpty) {
+//       r['properties'] = _properties.map((e) => e.toString()).toList();
+//     }
+//     return r;
+//   }
 
-  void addProperty(OpenApiModelProperty property) {
-    _properties.add(property);
-  }
-}
+//   void addProperty(OpenApiModelProperty property) {
+//     _properties.add(property);
+//   }
+// }
 
 final models = <String, StringBuffer>{};
 
@@ -107,54 +108,36 @@ class ArrowOpenApiGenerator extends GeneratorForAnnotation<OpenApiRouter> {
 
     header['version'] = apiVersion;
 
-    for (final f in element.fields) {
-      if (_checkForOpenApiRoute.hasAnnotationOfExact(f)) {
-        final routeReader =
-            ConstantReader(_checkForOpenApiRoute.firstAnnotationOf(f));
-        final reqModelType =
-            routeReader.peek('requestModel')!.objectValue;
-        print(reqModelType!.getDisplayString(withNullability: false));
+    final reqModels = <String, DartType>{};
+    final resModels = <String, DartType>{};
 
-        // final reqModelElementName = reqModelElement.displayName;
-        // print(reqModelElementName);
-        // if (reqModelElement is! ClassElement) {
-        //   throw ArrowOpenapiBuilderException(
-        //       'The Open API model $reqModelElementName must be a class element.');
-        // }
-        // print(_checkForOpenApiModel.hasAnnotationOf(reqModelElement.kind.));
-        // print(_checkForOpenApiModel.hasAnnotationOfExact(reqModelElement));
-        // if (!_checkForOpenApiModel.hasAnnotationOfExact(reqModelElement)) {
-        //   throw ArrowOpenapiBuilderException(
-        //       '$reqModelElementName must be annotated with @OpenApiModel.');
-        // }
-        // final reqModelReader = ConstantReader(
-        //     _checkForOpenApiModel.firstAnnotationOf(reqModelElement));
-        // for (final field in reqModelElement.fields) {
-        //   print(field.displayName);
-        // }
-
-        // print('requestModel');
-        // print(reqModelType.getDisplayString(withNullability: false));
+    for (final route in element.fields) {
+      if (!_checkForOpenApiRoute.hasAnnotationOfExact(route)) {
+        continue;
       }
+      print(route.);
+      // print(route.computeConstantValue());
+
+      final routeReader =
+          ConstantReader(_checkForOpenApiRoute.firstAnnotationOf(route));
+      final reqModelType = routeReader.peek('requestModel')!.typeValue;
+      final reqModelName =
+          reqModelType.getDisplayString(withNullability: false);
+      final resModelType = routeReader.peek('responseModel')!.typeValue;
+      final resModelName =
+          resModelType.getDisplayString(withNullability: false);
+      if (!_checkForOpenApiModel.hasAnnotationOfExact(reqModelType.element!)) {
+        throw ArrowOpenapiBuilderException('');
+      }
+      if (!_checkForOpenApiModel.hasAnnotationOfExact(resModelType.element!)) {
+        throw ArrowOpenapiBuilderException('');
+      }
+      reqModels[reqModelName] = reqModelType;
+      resModels[resModelName] = resModelType;
     }
 
-    // final DartType? requestModel = annotation.peek('requestModel')?.typeValue;
-    // final DartType? responseModel = annotation.peek('responseModel')?.typeValue;
+    final x = buildDefinitions(reqModels, resModels);
 
-    // if (requestModel == null) {
-    //   throw ArrowOpenapiBuilderException('The provided model is null.');
-    // }
-
-    // final name = requestModel.getDisplayString(withNullability: false);
-    // if (models.containsKey(name))
-    // for (final f in (requestModel.element as ClassElement).fields) {
-    //   print(f.displayName);
-    //   print(f.type);
-    // }
-
-    // for (final field in element.fields) {
-    //   print(field.getter);
-    // }
     return pj.prettyJson(header);
   }
 }
