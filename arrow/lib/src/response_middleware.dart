@@ -1,3 +1,3 @@
 import 'response.dart';
 
-typedef Future<Response?> ResponseMiddleware(Response? res);
+typedef Future<Response> ResponseMiddleware(Response res);

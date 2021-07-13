@@ -2,32 +2,32 @@ import 'dart:async';
 
 import 'request_middleware.dart';
 import 'response_middleware.dart';
-import 'handler.dart';
+import 'endpoint.dart';
 import 'request.dart';
 import 'response.dart';
 import 'guard.dart';
 
 typedef Future<Request> _WrappedRequestHandler(Request req);
-typedef Future<Response?> _WrappedResponseHandler(Response? res);
+typedef Future<Response> _WrappedResponseHandler(Response res);
 
 class Pipeline {
   final _syncRequestHandlers = <_WrappedRequestHandler>[];
   final _syncResponseHandlers = <_WrappedResponseHandler>[];
   final _asyncRequestHandlers = <_WrappedRequestHandler>[];
   final _asyncResponseHandlers = <_WrappedResponseHandler>[];
-  final Guard? _guard;
+  // final Guard? _guard;
 
-  Pipeline([this._guard]);
+  Pipeline();
 
-  Pipeline._clone(Pipeline src, [this._guard]) {
+  Pipeline._clone(Pipeline src) {
     _syncRequestHandlers.addAll(List.from(src._syncRequestHandlers));
     _syncResponseHandlers.addAll(List.from(src._syncResponseHandlers));
     _asyncRequestHandlers.addAll(List.from(src._asyncRequestHandlers));
     _asyncResponseHandlers.addAll(List.from(src._asyncResponseHandlers));
   }
 
-  Pipeline clone([Guard? guard]) {
-    return Pipeline._clone(this, guard);
+  Pipeline clone() {
+    return Pipeline._clone(this);
   }
 
   _WrappedRequestHandler _wrapRequestHandler(
@@ -49,12 +49,12 @@ class Pipeline {
 
   _WrappedResponseHandler _wrapResponseHandler(
       ResponseMiddleware middleware, bool useAlways) {
-    return (Response? res) async {
+    return (Response res) async {
       if (useAlways) {
         return Future(() async => middleware(res));
       } else {
         return Future(() async {
-          if (res!.isAlive) {
+          if (res.isAlive) {
             return middleware(res);
           } else {
             return res;
@@ -86,11 +86,10 @@ class Pipeline {
     }
   }
 
-  Future<Response?> serve(Request req, Handler endpoint,
-      {bool forceHandlerToRun = false}) async {
-    if (_guard != null) {
-      final guardAllows = await _guard!(req);
-      if (!guardAllows) {
+  Future<Response> serve(Request req, Endpoint endpoint,
+      {bool forceHandlerToRun = false, Guard? guard}) async {
+    if (guard != null) {
+      if (!(await guard(req))) {
         return req.respond.forbidden();
       }
     }
@@ -126,9 +125,9 @@ class Pipeline {
     return req;
   }
 
-  Future<Response?> _processSyncResponseHandlers(
-      Response? res, List<_WrappedResponseHandler> handlers) async {
-    for (var handler in handlers) {
+  Future<Response> _processSyncResponseHandlers(
+      Response res, List<_WrappedResponseHandler> handlers) async {
+    for (final handler in handlers) {
       res = await handler(res);
     }
     return res;
@@ -145,12 +144,12 @@ class Pipeline {
   }
 
   Future<Response> _processAsyncResponseHandlers(
-      Response? res, List<_WrappedResponseHandler> handlers) async {
+      Response res, List<_WrappedResponseHandler> handlers) async {
     if (handlers.length == 0) return Future.value(res);
-    List<Future<Response?>> futures = <Future<Response>>[];
+    List<Future<Response>> futures = <Future<Response>>[];
     for (var handler in handlers) {
       futures.add(handler(res));
     }
-    return Future.wait(futures).then((result) => result[result.length - 1]!);
+    return Future.wait(futures).then((result) => result[result.length - 1]);
   }
 }

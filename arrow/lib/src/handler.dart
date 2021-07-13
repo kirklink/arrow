@@ -1,7 +1,20 @@
-import 'request.dart';
-import 'response.dart';
+import 'endpoint.dart';
+import 'pipeline.dart';
 
-/// The function that executes the main logic for an endpoint. A [Handler] takes
-/// a [Request] and returns a [Response] with a data payload or relevant
-/// errors.
-typedef Future<Response?> Handler(Request req);
+// abstract class RouteTemplate {
+//   Route get route;
+// }
+
+// abstract class RouterConfig {}
+
+class Handler {
+  // final String method;
+  // final String path;
+  final Endpoint endpoint;
+  final Pipeline pipeline;
+
+  Handler(this.endpoint, this.pipeline);
+
+  // const Route.get(this.path, this.handler, this.pipeline) : method = 'GET';
+  // const Route.post(this.path, this.handler, this.pipeline) : method = 'POST';
+}

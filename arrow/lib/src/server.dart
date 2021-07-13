@@ -1,12 +1,11 @@
 import 'dart:io' as io;
 
 import 'arrow.dart';
-import 'router.dart';
+import 'router_builder.dart';
 import 'request.dart';
-import 'response.dart';
 
 class Server {
-  Router _router;
+  RouterBuilder _router;
   int _port;
 
   Server(this._router, this._port);

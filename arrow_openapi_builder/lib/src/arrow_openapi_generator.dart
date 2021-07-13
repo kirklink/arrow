@@ -7,11 +7,12 @@ import 'package:source_gen/src/constants/reader.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:pretty_json/pretty_json.dart' as pj;
 
-import 'annotations.dart';
+import 'package:arrow/annotations.dart';
+
 import 'arrow_openapi_exception.dart';
 import 'build_definitions.dart';
 
-final _checkForOpenApiRoute = const TypeChecker.fromRuntime(OpenApiRoute);
+final _checkForOpenApiRoute = const TypeChecker.fromRuntime(Route);
 final _checkForOpenApiModel = const TypeChecker.fromRuntime(OpenApiModel);
 final _checkForOpenApiField = const TypeChecker.fromRuntime(OpenApiField);
 
@@ -115,7 +116,7 @@ class ArrowOpenApiGenerator extends GeneratorForAnnotation<OpenApiRouter> {
       if (!_checkForOpenApiRoute.hasAnnotationOfExact(route)) {
         continue;
       }
-      print(route.);
+      // print(route.);
       // print(route.computeConstantValue());
 
       final routeReader =

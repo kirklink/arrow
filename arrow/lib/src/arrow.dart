@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'router.dart';
+import 'router_builder.dart';
 import 'server.dart';
 
 /// An Arrow server.
 class Arrow {
-  /// Starts the Arrow server with the provided [Router].
+  /// Starts the Arrow server with the provided [RouterBuilder].
   ///
   /// The [port] can be specified here but the ARROW_PORT environment variable
   /// will override this value if ARROW_PORT is found in the environment. Setting
@@ -15,17 +15,16 @@ class Arrow {
       {int port = 8080,
       bool forceSSL = false,
       bool printRoutes = false}) async {
-    final router = routerBuilder();
     if (printRoutes) {
-      _printRoutes(router);
+      _printRoutes(routerBuilder);
     }
     ;
-    final server = Server(router, port);
+    final server = Server(routerBuilder, port);
     await server.start(forceSSL: forceSSL);
     return;
   }
 
-  void _printRoutes(Router router) {
+  void _printRoutes(RouterBuilder router) {
     router.printRoutes();
     return;
   }
