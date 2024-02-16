@@ -16,7 +16,6 @@ class Router {
   String _pattern = '';
   late UriTemplate _template;
   late UriParser _parser;
-  final bool _isChild;
 
   Pipeline _pipeline = Pipeline();
 
@@ -48,8 +47,7 @@ class Router {
       {Pipeline? notFoundPipeline,
       bool shouldRecover = true,
       Recoverer? recoverer})
-      : _isChild = false,
-        _shouldRecover = shouldRecover {
+      : _shouldRecover = shouldRecover {
     if (notFoundPipeline != null) {
       _notFoundPipeline = notFoundPipeline;
     }
@@ -59,8 +57,7 @@ class Router {
   }
 
   Router._group(
-      String pattern, this._pipeline, this._shouldRecover, this._recoverer)
-      : _isChild = true {
+      String pattern, this._pipeline, this._shouldRecover, this._recoverer) {
     _pattern = _formatPattern(pattern);
     _template = UriTemplate(_pattern);
     _parser = UriParser(_template, queryParamsAreOptional: true);
@@ -165,7 +162,7 @@ class Router {
     return route;
   }
 
-  static Future<Response?> _notFoundHandler(Request req) async {
+  static Future<Response> _notFoundHandler(Request req) async {
     return req.respond.notFound();
   }
 

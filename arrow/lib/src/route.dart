@@ -7,13 +7,12 @@ import 'response.dart';
 import 'response_middleware.dart';
 import 'request_middleware.dart';
 import 'guard.dart';
-import 'middleware.dart';
 import 'constants.dart' show RouterMethods;
 import 'pipeline.dart';
 
 class Route {
   String _pattern;
-  String? _method;
+  late String _method;
   late u.UriTemplate _template;
   late u.UriParser _parser;
   Handler _endpoint;
@@ -56,7 +55,7 @@ class Route {
     _pipeline = _pipeline.clone(guard);
   }
 
-  Future<Response?> serve(Request req) async {
+  Future<Response> serve(Request req) async {
     req.params.load(_parser.parse(req.uri));
     return _pipeline.serve(req, _endpoint);
   }
