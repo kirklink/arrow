@@ -21,7 +21,7 @@ class Arrow {
     }
     ;
     final server = Server(router, port);
-    await server.start(forceSSL: forceSSL);
+    await server.start(forceSSL: forceSSL, isOnProduction: isOnProduction);
     return;
   }
 
@@ -30,21 +30,34 @@ class Arrow {
     return;
   }
 
-  /// Returns true if the environment variable BUILD_ENV is 'production'
-  static final isOnProduction =
-      const String.fromEnvironment('BUILD_ENV', defaultValue: '') ==
-          'production';
+  String? _environment;
 
-  /// Returns true if the environment variable BUILD_ENV is 'staging'
-  static final isOnStaging =
-      const String.fromEnvironment('BUILD_ENV', defaultValue: '') == 'staging';
+  String get environment {
+    if (_environment == null) {
+      _environment = String.fromEnvironment('BUILD_ENV', defaultValue: '');
+    }
+    return _environment!;
+  }
 
-  /// Returns true if the environment variable BUILD_ENV is 'development'
-  static final isOnDevelopment =
-      const String.fromEnvironment('BUILD_ENV', defaultValue: '') ==
-          'development';
-
-  /// Returns the environment variable BUILD_ENV
-  static final environment =
-      const String.fromEnvironment('BUILD_ENV', defaultValue: '');
+  bool get isOnProduction => environment == 'production';
+  bool get isOnStaging => environment == 'staging';
+  bool get isOnDevelopment => environment == 'development';
 }
+//   /// Returns true if the environment variable BUILD_ENV is 'production'
+//   static final isOnProduction =
+//       const String.fromEnvironment('BUILD_ENV', defaultValue: '') ==
+//           'production';
+
+//   /// Returns true if the environment variable BUILD_ENV is 'staging'
+//   static final isOnStaging =
+//       const String.fromEnvironment('BUILD_ENV', defaultValue: '') == 'staging';
+
+//   /// Returns true if the environment variable BUILD_ENV is 'development'
+//   static final isOnDevelopment =
+//       const String.fromEnvironment('BUILD_ENV', defaultValue: '') ==
+//           'development';
+
+//   /// Returns the environment variable BUILD_ENV
+//   static final environment =
+//       const String.fromEnvironment('BUILD_ENV', defaultValue: '');
+// }

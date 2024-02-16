@@ -11,13 +11,13 @@ class Server {
 
   Server(this._router, this._port);
 
-  Future start({bool forceSSL: false}) async {
+  Future start({bool isOnProduction = false, bool forceSSL = false}) async {
     final _server = await io.HttpServer.bind(io.InternetAddress.anyIPv4, _port);
-    if (!Arrow.isOnProduction)
+    if (!isOnProduction)
       print('Server listening on localhost, port ${_server.port}');
     await for (io.HttpRequest req in _server) {
       final reqUri = req.requestedUri;
-      if (Arrow.isOnProduction && forceSSL && reqUri.scheme != 'https') {
+      if (isOnProduction && forceSSL && reqUri.scheme != 'https') {
         req.response.redirect(
             Uri.https(reqUri.authority, reqUri.path, reqUri.queryParameters),
             status: io.HttpStatus.movedPermanently);
@@ -27,7 +27,7 @@ class Server {
             req.response.close();
           });
         } catch (e) {
-          if (!Arrow.isOnProduction) {
+          if (!isOnProduction) {
             print('!! -- Unrecovered Server Error START -- !!');
             print(e);
             print('!! -- Unrecovered Server Error END -- !!');

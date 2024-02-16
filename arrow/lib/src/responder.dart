@@ -12,15 +12,7 @@ class Responder {
 
   Responder(this._request);
 
-  // bool get isComplete => _responseObject != null;
-  // int get statusCode => _responseObject.statusCode;
-  //
   Response get response => _response;
-
-  // Responder go(Request request) {
-  //   if (_request == null) _request = request;
-  //   return this;
-  // }
 
   Response ok(
       {Map<String, dynamic> data = const <String, dynamic>{},
