@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:uuid/uuid.dart';
-import 'package:uuid/uuid_util.dart';
+import 'package:uuid/data.dart';
+import 'package:uuid/rng.dart';
 
 class Context<T> {
   final _items = <String, dynamic>{};
@@ -67,8 +70,13 @@ class Context<T> {
     return _items.containsKey(key);
   }
 
+  static List<int> _random_ints(int length) {
+    final random = Random();
+    return List<int>.generate(length, (i) => random.nextInt(256));
+  }
+
   static String makeKey() {
-    final uuid = Uuid(options: {'gnrg': UuidUtil.cryptoRNG()}).v4();
+    final uuid = Uuid().v4(config: V4Options(_random_ints(8), CryptoRNG()));
     return uuid;
   }
 }
