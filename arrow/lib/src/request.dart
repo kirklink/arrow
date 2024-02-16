@@ -15,9 +15,11 @@ class Request {
   final messenger = InternalMessenger();
   final params = Parameters();
   bool _isAlive = true;
-  Responder _responder = Responder();
+  late Responder _responder;
 
-  Request(this.innerRequest);
+  Request(this.innerRequest) {
+    this._responder = Responder(this);
+  }
 
   bool get isAlive => _isAlive;
   void cancel() => _isAlive = false;
@@ -33,5 +35,5 @@ class Request {
     _content = content;
   }
 
-  Responder get respond => _responder.go(this);
+  Responder get respond => _responder;
 }
