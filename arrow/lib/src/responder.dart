@@ -30,7 +30,7 @@ class Responder {
     }
     final code = _getSuccessCode();
     final encoded = json.encode({"ok": true, "data": data});
-    final srcResponse = _request!.innerRequest.response;
+    final srcResponse = _request.innerRequest.response;
     srcResponse.headers.set(
         io.HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
     srcResponse.statusCode = code;
@@ -45,7 +45,7 @@ class Responder {
       throw ArrowException('The response has already been set.');
     }
     final encoded = json.encode(data);
-    final srcResponse = _request!.innerRequest.response;
+    final srcResponse = _request.innerRequest.response;
     srcResponse.headers.set(
         io.HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
     srcResponse.statusCode = statusCode;
@@ -59,7 +59,7 @@ class Responder {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
-    final srcResponse = _request!.innerRequest.response;
+    final srcResponse = _request.innerRequest.response;
     srcResponse.statusCode = statusCode;
     _complete = true;
     _response = Response(_request);
@@ -90,7 +90,7 @@ class Responder {
     final code = io.HttpStatus.notFound;
     _complete = true;
     _response = Response(
-        _errorResponse(_request!, code, msg, errors as Map<String, String>));
+        _errorResponse(_request, code, msg, errors as Map<String, String>));
     return _response;
   }
 
@@ -104,7 +104,7 @@ class Responder {
     final code = io.HttpStatus.forbidden;
     _complete = true;
     _response = Response(
-        _errorResponse(_request!, code, msg, errors as Map<String, String>));
+        _errorResponse(_request, code, msg, errors as Map<String, String>));
     return _response;
   }
 
@@ -118,7 +118,7 @@ class Responder {
     final code = io.HttpStatus.badRequest;
     _complete = true;
     _response = Response(
-        _errorResponse(_request!, code, msg, errors as Map<String, String>));
+        _errorResponse(_request, code, msg, errors as Map<String, String>));
     return _response;
   }
 
@@ -129,7 +129,7 @@ class Responder {
     final code = io.HttpStatus.internalServerError;
     final msg = 'Server Error';
     _complete = true;
-    _response = Response(_errorResponse(_request!, code, msg, const {}));
+    _response = Response(_errorResponse(_request, code, msg, const {}));
     return _response;
   }
 
@@ -137,7 +137,7 @@ class Responder {
       Request request, int code, String msg, Map<String, String> errors) {
     final wrapped =
         json.encode({"ok": false, "errorMessage": msg, "errors": errors});
-    final srcResponse = _request!.innerRequest.response;
+    final srcResponse = _request.innerRequest.response;
     srcResponse.headers.set(
         io.HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
     srcResponse.statusCode = code;
