@@ -72,7 +72,7 @@ class Context<T> {
 
   static List<int> _random_ints(int length) {
     final random = Random();
-    return List<int>.generate(length, (i) => random.nextInt(256));
+    return List<int>.generate(length, (i) => random.nextInt(8));
   }
 
   static String makeKey() {
