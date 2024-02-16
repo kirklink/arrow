@@ -76,7 +76,7 @@ class Context<T> {
   }
 
   static String makeKey() {
-    final uuid = Uuid().v4(config: V4Options(_random_ints(8), CryptoRNG()));
+    final uuid = Uuid().v4(config: V4Options(_random_ints(7), CryptoRNG()));
     return uuid;
   }
 }
