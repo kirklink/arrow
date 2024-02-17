@@ -9,11 +9,15 @@ typedef void Logger(String msg);
 
 final loggerContextKey = Context.makeKey();
 
+// A class that logs HTTP requests.
+///
+/// This class is responsible for tracking and recording all incoming and outgoing requests.
+/// It can be useful for debugging and monitoring purposes.
 class LogRequests {
-  DateTime _startTime = DateTime.now().toUtc();
-  late DateTime _endTime;
-  String? _method;
-  String? _path;
+  final DateTime _startTime = DateTime.now().toUtc();
+  late final DateTime _endTime;
+  late final String _method;
+  late final String _path;
 
   LogRequests(Request request) {
     _method = request.method;
@@ -54,9 +58,9 @@ String _errorMessages(Response res, bool isOn) {
   }
 }
 
-ResponseMiddleware loggerOut({Logger? logger: null, bool messages: false}) {
+ResponseMiddleware loggerOut(
+    {Logger? logger = _defaultLogger, bool messages = false}) {
   return (Response? res) async {
-    if (logger == null) logger = _defaultLogger;
     final log = res!.context.tryGet<LogRequests>(loggerContextKey)!;
     log.end();
     if (res.statusCode < 200 || res.statusCode > 299) {
