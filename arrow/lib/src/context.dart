@@ -72,11 +72,11 @@ class Context<T> {
 
   static List<int> _random_ints(int length) {
     final random = Random();
-    return List<int>.generate(length, (i) => random.nextInt(8));
+    return List<int>.generate(length, (i) => random.nextInt(255));
   }
 
   static String makeKey() {
-    final uuid = Uuid().v4(config: V4Options([1], CryptoRNG()));
+    final uuid = Uuid().v4(config: V4Options(_random_ints(10), CryptoRNG()));
     return uuid;
   }
 }
