@@ -1,0 +1,9 @@
+# Build configuration for arrow_mcp_generator
+
+builders:
+  mcp_server:
+    import: "package:arrow_mcp_generator/src/generator.dart"
+    builder_factories: ["mcpServerBuilder"]
+    build_extensions: {"lib/$lib$": ["mcp_server.dart"]}
+    auto_apply: dependents
+    build_to: root
