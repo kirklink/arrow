@@ -39,8 +39,8 @@ void main() async {
   await app.run(() {
     final router = Router();
 
-    router.get('/hello', (Request req) {
-      return req.response.ok(data: {'message': 'Hello, World!'});
+    router.get('/hello', (Request req) async {
+      return req.respond.ok(data: {'message': 'Hello, World!'});
     });
 
     return router;
@@ -73,12 +73,12 @@ router.get('/users', getAllUsers);
 router.post('/users', createUser);
 
 // Path parameters
-router.get('/users/:id', getUserById);
-router.put('/users/:id', updateUser);
-router.delete('/users/:id', deleteUser);
+router.get('/users/{id}', getUserById);
+router.put('/users/{id}', updateUser);
+router.delete('/users/{id}', deleteUser);
 
 // Multiple parameters
-router.get('/posts/:postId/comments/:commentId', getComment);
+router.get('/posts/{postId}/comments/{commentId}', getComment);
 ```
 
 ### Handlers
@@ -87,16 +87,16 @@ Handlers receive a `Request` object and return a `Response`:
 
 ```dart
 Response getUserById(Request req) {
-  final id = req.parameters.get('id');
+  final id = req.params.get('id');
 
   // Your logic here
   final user = database.findUser(id);
 
   if (user == null) {
-    return req.response.notFound(msg: 'User not found');
+    return req.respond.notFound(msg: 'User not found');
   }
 
-  return req.response.ok(data: user.toJson());
+  return req.respond.ok(data: user.toJson());
 }
 ```
 
@@ -106,19 +106,19 @@ Arrow provides convenient response methods:
 
 ```dart
 // Success responses
-req.response.ok(data: {'user': 'Alice'});           // 200 OK (GET)
-req.response.ok(data: {'id': 123});                 // 201 Created (POST)
-req.response.code(204);                             // 204 No Content
+req.respond.ok(data: {'user': 'Alice'});           // 200 OK (GET)
+req.respond.ok(data: {'id': 123});                 // 201 Created (POST)
+req.respond.code(204);                             // 204 No Content
 
 // Error responses
-req.response.badRequest(msg: 'Invalid input');      // 400
-req.response.unauthorized(msg: 'Login required');   // 401
-req.response.forbidden(msg: 'Access denied');       // 403
-req.response.notFound(msg: 'Resource not found');   // 404
-req.response.serverError();                         // 500
+req.respond.badRequest(msg: 'Invalid input');      // 400
+req.respond.unauthorized(msg: 'Login required');   // 401
+req.respond.forbidden(msg: 'Access denied');       // 403
+req.respond.notFound(msg: 'Resource not found');   // 404
+req.respond.serverError();                         // 500
 
 // Custom responses
-req.response.raw(418, {'message': "I'm a teapot"});
+req.respond.raw(418, {'message': "I'm a teapot"});
 ```
 
 ### Middleware
@@ -157,7 +157,7 @@ RequestMiddleware authMiddleware() {
 
     if (token == null) {
       req.cancel();
-      return req.response.unauthorized(msg: 'Missing auth token');
+      return req.respond.unauthorized(msg: 'Missing auth token');
     }
 
     final user = await validateToken(token);
@@ -184,7 +184,7 @@ Share data between middleware and handlers using the request context:
 // In middleware
 RequestMiddleware loadUser() {
   return (Request req) async {
-    final userId = req.parameters.get('userId');
+    final userId = req.params.get('userId');
     final user = await database.findUser(userId);
 
     req.context.setOrReplace('user', user);
@@ -197,10 +197,10 @@ Response getProfile(Request req) {
   final user = req.context.tryGet<User>('user');
 
   if (user == null) {
-    return req.response.notFound(msg: 'User not found');
+    return req.respond.notFound(msg: 'User not found');
   }
 
-  return req.response.ok(data: user.toJson());
+  return req.respond.ok(data: user.toJson());
 }
 ```
 
@@ -222,7 +222,7 @@ v1.post('/users', createUser);
 final admin = v1.group('/admin');
 admin.use(requireAdmin());
 admin.get('/stats', getStats);
-admin.delete('/users/:id', deleteUser);
+admin.delete('/users/{id}', deleteUser);
 ```
 
 ### Request Cancellation
@@ -236,7 +236,7 @@ RequestMiddleware requireAuth() {
 
     if (token == null) {
       req.cancel();  // Stop processing
-      return req.response.unauthorized(msg: 'Auth required');
+      return req.respond.unauthorized(msg: 'Auth required');
     }
 
     return req;
@@ -254,28 +254,20 @@ import 'package:arrow/arrow.dart';
 import 'package:arrow/middlewares.dart';
 
 Router routerConfig() {
-  final notFoundHandler = (Request req) {
-    return req.response.notFound(msg: 'Endpoint not found');
-  };
-
-  final cors = Cors(
-    allowedOrigins: const ['http://localhost:4200'],
-    allowedHeaders: const ['Origin', 'Accept', 'Content-Type', 'Authorization'],
-    allowedMethods: ['GET', 'POST', 'PUT', 'DELETE']
-  );
+  Future<Response> notFoundHandler(Request req) async {
+    return req.respond.notFound(msg: 'Endpoint not found');
+  }
 
   return Router()
     ..notFound(notFoundHandler)
-    ..recover()
-    ..use(cors())
-    ..use(logger())
-    ..use(readJsonContent())
+    ..onRequest(loggerIn(), useAlways: true)
+    ..onResponse(loggerOut(messages: true), useAlways: true)
     ..get('/health', healthCheck)
     ..get('/users', getAllUsers)
-    ..get('/users/:id', getUserById)
+    ..get('/users/{id}', getUserById)
     ..post('/users', createUser)
-    ..put('/users/:id', updateUser)
-    ..delete('/users/:id', deleteUser);
+    ..put('/users/{id}', updateUser)
+    ..delete('/users/{id}', deleteUser);
 }
 
 // main.dart
@@ -341,50 +333,50 @@ void main() async {
 
     // User routes
     api.get('/users', getAllUsers);
-    api.get('/users/:id', getUserById);
+    api.get('/users/{id}', getUserById);
     api.post('/users', createUser);
-    api.put('/users/:id', updateUser);
-    api.delete('/users/:id', deleteUser);
+    api.put('/users/{id}', updateUser);
+    api.delete('/users/{id}', deleteUser);
 
     // Not found handler
-    router.notFound((Request req) {
-      return req.response.notFound(msg: 'Endpoint not found');
+    router.notFound((Request req) async {
+      return req.respond.notFound(msg: 'Endpoint not found');
     });
 
     return router;
   }, port: 8080, printRoutes: true);
 }
 
-Response healthCheck(Request req) {
-  return req.response.ok(data: {'status': 'healthy'});
+Future<Response> healthCheck(Request req) async {
+  return req.respond.ok(data: {'status': 'healthy'});
 }
 
-Response getAllUsers(Request req) {
+Future<Response> getAllUsers(Request req) async {
   // Your implementation
-  return req.response.ok(data: {'users': []});
+  return req.respond.ok(data: {'users': []});
 }
 
-Response getUserById(Request req) {
-  final id = req.parameters.get('id');
+Future<Response> getUserById(Request req) async {
+  final id = req.params.get('id');
   // Your implementation
-  return req.response.ok(data: {'id': id});
+  return req.respond.ok(data: {'id': id});
 }
 
-Response createUser(Request req) {
+Future<Response> createUser(Request req) async {
   // Your implementation
-  return req.response.ok(data: {'created': true});
+  return req.respond.ok(data: {'created': true});
 }
 
-Response updateUser(Request req) {
-  final id = req.parameters.get('id');
+Future<Response> updateUser(Request req) async {
+  final id = req.params.get('id');
   // Your implementation
-  return req.response.ok(data: {'id': id, 'updated': true});
+  return req.respond.ok(data: {'id': id, 'updated': true});
 }
 
-Response deleteUser(Request req) {
-  final id = req.parameters.get('id');
+Future<Response> deleteUser(Request req) async {
+  final id = req.params.get('id');
   // Your implementation
-  return req.response.code(204);
+  return req.respond.code(204);
 }
 
 RequestMiddleware requireAuth() {
@@ -393,7 +385,7 @@ RequestMiddleware requireAuth() {
 
     if (token == null || token.isEmpty) {
       req.cancel();
-      return req.response.unauthorized(msg: 'Authentication required');
+      return req.respond.unauthorized(msg: 'Authentication required');
     }
 
     // Validate token and load user
