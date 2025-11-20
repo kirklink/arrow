@@ -1,4 +1,3 @@
-import 'package:arrow/arrow.dart';
 import 'package:arrow_openapi/arrow_openapi.dart';
 
 // This annotation will trigger code generation

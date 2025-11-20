@@ -17,9 +17,6 @@ dependencies:
   source_gen: ^1.5.0
   analyzer: ^6.0.0
 
-  # OpenAPI parsing
-  openapi_spec: ^0.1.1
-
   # Utilities
   path: ^1.8.0
   yaml: ^3.1.0
