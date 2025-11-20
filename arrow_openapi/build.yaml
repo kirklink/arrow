@@ -1,0 +1,10 @@
+# Build configuration for arrow_openapi code generator
+
+builders:
+  arrow_openapi:
+    import: "package:arrow_openapi/src/generator.dart"
+    builder_factories: ["arrowOpenApiBuilder"]
+    build_extensions: {".dart": [".openapi.dart"]}
+    auto_apply: dependents
+    build_to: source
+    applies_builders: ["source_gen|combining_builder"]
