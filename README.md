@@ -244,6 +244,51 @@ RequestMiddleware requireAuth() {
 }
 ```
 
+### Router Configuration with Cascade Operator
+
+Dart's cascade operator (`..`) enables elegant fluent configuration in a separate file:
+
+```dart
+// router_config.dart
+import 'package:arrow/arrow.dart';
+import 'package:arrow/middlewares.dart';
+
+Router routerConfig() {
+  final notFoundHandler = (Request req) {
+    return req.response.notFound(msg: 'Endpoint not found');
+  };
+
+  final cors = Cors(
+    allowedOrigins: const ['http://localhost:4200'],
+    allowedHeaders: const ['Origin', 'Accept', 'Content-Type', 'Authorization'],
+    allowedMethods: ['GET', 'POST', 'PUT', 'DELETE']
+  );
+
+  return Router()
+    ..notFound(notFoundHandler)
+    ..recover()
+    ..use(cors())
+    ..use(logger())
+    ..use(readJsonContent())
+    ..get('/health', healthCheck)
+    ..get('/users', getAllUsers)
+    ..get('/users/:id', getUserById)
+    ..post('/users', createUser)
+    ..put('/users/:id', updateUser)
+    ..delete('/users/:id', deleteUser);
+}
+
+// main.dart
+import 'router_config.dart';
+
+void main() async {
+  final app = Arrow();
+  await app.run(routerConfig, port: 8080);
+}
+```
+
+The cascade operator (`..`) calls methods on the same object and returns the object, making it perfect for configuring routers in a clean, chainable style.
+
 ## Response Format
 
 Arrow uses a consistent JSON response format:
