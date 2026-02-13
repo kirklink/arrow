@@ -160,6 +160,46 @@ class Router {
     return route;
   }
 
+  /// Create a PATCH route with the specified URI pattern and handler
+  ///
+  /// PATCH is used for partial updates to a resource, as opposed to PUT
+  /// which replaces the entire resource.
+  ///
+  /// ```dart
+  /// router.patch('/users/{id}', (req) async {
+  ///   final id = req.params.get('id');
+  ///   // Apply partial update...
+  ///   return req.respond.ok(data: {'id': id, 'updated': true});
+  /// });
+  /// ```
+  Route patch(String pattern, Handler endpoint) {
+    pattern = _formatPattern(pattern);
+    Route route =
+        Route(RouterMethods.PATCH, _pattern + pattern, endpoint, _pipeline);
+    _storeRouteInTree(RouterMethods.PATCH, route);
+    return route;
+  }
+
+  /// Create a HEAD route with the specified URI pattern and handler
+  ///
+  /// HEAD is identical to GET but returns only headers, no body.
+  /// Useful for checking resource existence or metadata without
+  /// transferring the full response body.
+  ///
+  /// ```dart
+  /// router.head('/users/{id}', (req) async {
+  ///   // Check if user exists, return status only
+  ///   return req.respond.code(200);
+  /// });
+  /// ```
+  Route head(String pattern, Handler endpoint) {
+    pattern = _formatPattern(pattern);
+    Route route =
+        Route(RouterMethods.HEAD, _pattern + pattern, endpoint, _pipeline);
+    _storeRouteInTree(RouterMethods.HEAD, route);
+    return route;
+  }
+
   static Future<Response> _defaultNotFoundHandler(Request req) async {
     return req.respond.notFound();
   }

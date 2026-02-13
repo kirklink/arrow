@@ -6,14 +6,14 @@ void main() {
     test('should start empty', () {
       final params = Parameters();
 
-      expect(params.get('any-key'), equals(''));
+      expect(params.get('any-key'), isNull);
     });
 
-    test('should return empty string for non-existent keys', () {
+    test('should return null for non-existent keys', () {
       final params = Parameters();
 
-      expect(params.get('missing'), equals(''));
-      expect(params.get('nonexistent'), equals(''));
+      expect(params.get('missing'), isNull);
+      expect(params.get('nonexistent'), isNull);
     });
 
     group('load()', () {
@@ -31,7 +31,7 @@ void main() {
 
         params.load({});
 
-        expect(params.get('any-key'), equals(''));
+        expect(params.get('any-key'), isNull);
       });
 
       test('should handle URL-like parameters', () {
@@ -82,7 +82,7 @@ void main() {
         }
 
         expect(params.get('original'), equals('value'));
-        expect(params.get('new'), equals('')); // Not loaded
+        expect(params.get('new'), isNull); // Not loaded
       });
     });
 
@@ -101,16 +101,14 @@ void main() {
         expect(params.get('special'), equals('hello-world_123'));
       });
 
-      test('should return empty string, not null', () {
+      test('should return null for missing keys', () {
         final params = Parameters();
 
         params.load({'exists': 'value'});
 
         final result = params.get('missing');
 
-        expect(result, isNotNull);
-        expect(result, equals(''));
-        expect(result, isNot(isNull));
+        expect(result, isNull);
       });
 
       test('should distinguish between empty and missing', () {
@@ -119,7 +117,7 @@ void main() {
         params.load({'empty': '', 'present': 'value'});
 
         expect(params.get('empty'), equals(''));
-        expect(params.get('missing'), equals(''));
+        expect(params.get('missing'), isNull);
         expect(params.get('present'), equals('value'));
       });
 
