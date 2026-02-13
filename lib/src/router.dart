@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert' show json;
+import 'dart:io' as io;
 import 'package:arrow/arrow.dart';
 import 'package:uri/uri.dart';
 
@@ -262,6 +264,9 @@ class Router {
   Future<Response?> serve(Request req) async {
     try {
       return await _serve(req);
+    } on HttpException catch (e) {
+      if (!_shouldRecover) rethrow;
+      return _handleHttpException(req, e);
     } on Error catch (e, s) {
       if (!_shouldRecover) {
         rethrow;
@@ -275,6 +280,22 @@ class Router {
         return await _recoverer(req, exception: e, stacktrace: s);
       }
     }
+  }
+
+  /// Converts an [HttpException] to Arrow's standard error response.
+  Response _handleHttpException(Request req, HttpException e) {
+    final encoded = json.encode({
+      'ok': false,
+      'errorMessage': e.message,
+      'errors': e.errors,
+    });
+    final srcResponse = req.innerRequest.response;
+    srcResponse.headers.set(
+        io.HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
+    srcResponse.statusCode = e.statusCode;
+    srcResponse.write(encoded);
+    req.cancel();
+    return Response(req);
   }
 
   /// Returns true if the router base route matches part of the requested URI.

@@ -60,57 +60,49 @@ class Responder {
 
   Response unauthorized(
       {String msg = 'Unauthorized',
-      Map<String, Object> errors = const <String, String>{},
-      bool printResponseObject = false}) {
+      Map<String, Object> errors = const <String, Object>{}}) {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
     final code = io.HttpStatus.unauthorized;
     _complete = true;
-    _response = Response(
-        _errorResponse(_request, code, msg, errors as Map<String, String>));
+    _response = Response(_errorResponse(_request, code, msg, errors));
     return _response;
   }
 
   Response notFound(
       {String msg = 'Not Found',
-      Map<String, Object> errors = const <String, String>{},
-      bool printResponseObject = false}) {
+      Map<String, Object> errors = const <String, Object>{}}) {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
     final code = io.HttpStatus.notFound;
     _complete = true;
-    _response = Response(
-        _errorResponse(_request, code, msg, errors as Map<String, String>));
+    _response = Response(_errorResponse(_request, code, msg, errors));
     return _response;
   }
 
   Response forbidden(
       {String msg = 'Forbidden',
-      Map<String, Object> errors = const <String, String>{},
-      bool printResponseObject = false}) {
+      Map<String, Object> errors = const <String, Object>{}}) {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
     final code = io.HttpStatus.forbidden;
     _complete = true;
-    _response = Response(
-        _errorResponse(_request, code, msg, errors as Map<String, String>));
+    _response = Response(_errorResponse(_request, code, msg, errors));
     return _response;
   }
 
   Response badRequest(
       {String msg = 'Bad Request',
-      Map<String, Object> errors = const <String, String>{},
-      bool printResponseObject = false}) {
+      Map<String, Object> errors = const <String, Object>{}}) {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
     final code = io.HttpStatus.badRequest;
     _complete = true;
-    _response = Response(
-        _errorResponse(_request, code, msg, errors as Map<String, String>));
+    _response = Response(_errorResponse(_request, code, msg, errors));
     return _response;
   }
 
@@ -125,8 +117,24 @@ class Responder {
     return _response;
   }
 
+  /// Send a generic error response with a custom status code.
+  ///
+  /// ```dart
+  /// req.respond.error(429, msg: 'Too Many Requests');
+  /// ```
+  Response error(int statusCode,
+      {String msg = 'Error',
+      Map<String, Object> errors = const <String, Object>{}}) {
+    if (_complete) {
+      throw ArrowException('The response has already been set.');
+    }
+    _complete = true;
+    _response = Response(_errorResponse(_request, statusCode, msg, errors));
+    return _response;
+  }
+
   Request _errorResponse(
-      Request request, int code, String msg, Map<String, String> errors) {
+      Request request, int code, String msg, Map<String, Object> errors) {
     final wrapped =
         json.encode({"ok": false, "errorMessage": msg, "errors": errors});
     final srcResponse = _request.innerRequest.response;

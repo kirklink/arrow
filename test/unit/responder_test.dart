@@ -391,6 +391,86 @@ void main() {
       });
     });
 
+    group('error()', () {
+      test('should create response with custom status code', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        final response = responder.error(429, msg: 'Too Many Requests');
+
+        expect(response, isNotNull);
+        expect(req.innerRequest.response.statusCode, equals(429));
+        expect(req.isAlive, isFalse);
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should accept errors map', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.error(422,
+            msg: 'Unprocessable',
+            errors: {'field': 'invalid value'});
+
+        expect(req.innerRequest.response.statusCode, equals(422));
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should throw if response already set', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.error(429);
+
+        expect(
+          () => responder.error(429),
+          throwsA(isA<ArrowException>()),
+        );
+
+        await cleanupMockRequest(httpReq);
+      });
+    });
+
+    group('Map<String, Object> errors', () {
+      test('badRequest should accept nested error objects', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        // Nested errors like endorse would produce
+        responder.badRequest(
+          msg: 'Validation failed',
+          errors: {
+            'name': ['is required', 'must be at least 2 characters'],
+            'email': 'is not a valid email',
+          },
+        );
+
+        expect(req.innerRequest.response.statusCode,
+            equals(io.HttpStatus.badRequest));
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('unauthorized should accept Map<String, Object> errors', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.unauthorized(errors: {'token': 'expired', 'code': 'AUTH_01'});
+
+        expect(req.innerRequest.response.statusCode,
+            equals(io.HttpStatus.unauthorized));
+
+        await cleanupMockRequest(httpReq);
+      });
+    });
+
     group('response prevention', () {
       test('should prevent multiple responses (ok then notFound)', () async {
         final httpReq = await createMockHttpRequest();
