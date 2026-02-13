@@ -1,5 +1,7 @@
 # Arrow Server Framework - Technical Assessment
 
+> **Note:** This is a historical assessment from 2025-11-20. For the current development roadmap, see [modernization-plan.md](modernization-plan.md).
+
 **Date:** 2025-11-20
 **Version Assessed:** 0.1.0-nullsafety.0
 **Status:** Resuming development after hiatus
