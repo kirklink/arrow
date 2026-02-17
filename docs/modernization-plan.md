@@ -4,7 +4,7 @@
 
 **Timeline:** 12 weeks (3 months)
 
-**Current Status:** Phase 1 complete. ~55-60% feature-complete compared to modern frameworks
+**Current Status:** Phase 2 in progress. ~65-70% feature-complete compared to modern frameworks
 
 ---
 
@@ -34,7 +34,7 @@ Created HttpException hierarchy (BadRequest 400, Unauthorized 401, Forbidden 403
 ### 1.5 Cookie Support ✅
 `req.cookies` getter (cached `Map<String, String>`) and `req.cookie(name)` for reading. `req.respond.setCookie()` with full options (httpOnly, secure, maxAge, expires, path, domain, sameSite) and `clearCookie()` for writing. No middleware needed — dart:io handles parsing/serialization. httpOnly defaults true. Signed cookies deferred (REST APIs use JWT). 27 tests.
 
-**Phase 1 total: 192 passing tests.**
+**Phase 1 total: 192 tests.**
 
 ---
 
@@ -76,60 +76,18 @@ Created HttpException hierarchy (BadRequest 400, Unauthorized 401, Forbidden 403
 
 ---
 
-### 2.3 Rate Limiting
-**Duration:** 3 days
-**Task:** Prevent abuse with rate limiting
-
-**Implementation:**
-1. IP-based rate limiter middleware
-2. Configurable limits (requests per window)
-3. Per-route rate limit configuration
-4. Sliding window algorithm
-5. Custom rate limit exceeded responses
-6. Memory-based storage (consider Redis later)
-7. Write rate limiting tests
-8. Document with security best practices
-
-**Why:** Prevent abuse, DoS attacks, ensure fair usage
+### 2.3 Rate Limiting ✅
+Fixed-window IP-based rate limiter. `RateLimitConfig` with `maxRequests`, `window`, `keyExtractor` (custom key function for API-key/header-based limiting), `includeHeaders`. `RateLimitStore` abstract interface with `MemoryRateLimitStore` (lazy cleanup). Standard headers: `X-RateLimit-Limit/Remaining/Reset`, `Retry-After`. Added `TooManyRequestsException` and `Responder.tooManyRequests()`. 33 tests.
 
 ---
 
-### 2.4 Security Middleware
-**Duration:** 3 days
-**Task:** Add comprehensive security headers
-
-**Implementation:**
-1. Security headers middleware (Helmet-style):
-   - X-Content-Type-Options
-   - X-Frame-Options
-   - X-XSS-Protection
-   - Strict-Transport-Security
-   - Content-Security-Policy
-   - Referrer-Policy
-2. CSRF protection middleware
-3. XSS prevention helpers
-4. Configurable security profiles
-5. Write security tests
-6. Document security best practices
-
-**Why:** Security is non-negotiable for production apps
+### 2.4 Security Headers ✅
+Helmet-style `securityHeaders()` middleware with `SecurityHeadersConfig` (const constructor, all fields nullable). 7 default headers: X-Content-Type-Options, X-Frame-Options, HSTS, Referrer-Policy, X-XSS-Protection, CSP, CORP. Built as `RequestMiddleware` so headers persist through HttpException error paths. Set null to disable a header. Header map built once at registration, not per-request. 11 tests.
 
 ---
 
-### 2.5 Response Compression
-**Duration:** 2 days
-**Task:** Compress responses for performance
-
-**Implementation:**
-1. Gzip compression middleware
-2. Configurable compression levels
-3. Content-Type filtering (only compress text-based)
-4. Minimum response size threshold
-5. Accept-Encoding header checking
-6. Write compression tests
-7. Document performance impact
-
-**Why:** Reduce bandwidth and improve response times
+### 2.5 Response Compression ✅
+Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter (defaults `true`). Dart's autoCompress handles Accept-Encoding negotiation and Content-Encoding headers automatically. No middleware needed — Responder writes body inline via `srcResponse.write()`, so a compression middleware would require rearchitecting. 6 tests.
 
 ---
 
@@ -275,11 +233,11 @@ Created HttpException hierarchy (BadRequest 400, Unauthorized 401, Forbidden 403
 - ✅ Request validation framework (endorse integration)
 - ✅ Enhanced error handling (HttpException hierarchy)
 - ✅ Cookie support
+- ✅ Security headers (Helmet-style)
+- ✅ Rate limiting (fixed window, configurable)
+- ✅ Response compression (gzip via autoCompress)
 - ⬜ File uploads
 - ⬜ Static file serving
-- ⬜ Rate limiting
-- ⬜ Security headers
-- ⬜ Compression
 - ⬜ Streaming responses
 - ⬜ WebSocket support
 - ⬜ Flexible response types
@@ -287,10 +245,10 @@ Created HttpException hierarchy (BadRequest 400, Unauthorized 401, Forbidden 403
 - ⬜ Graceful shutdown
 
 ### Quality Metrics
-- **Tests:** 192 passing tests (target: 250+)
+- **Tests:** 242 passing tests (target: 250+)
 - **Coverage:** TBD (target: >80%)
 - **Documentation:** Dart docs on all new public APIs
-- **Examples:** arrow_example demonstrates all Phase 1 features
+- **Examples:** arrow_example demonstrates Phase 1 features
 
 ### Developer Experience
 - Clear error messages
@@ -398,10 +356,11 @@ These are intentionally excluded from this plan:
 ## Next Steps
 
 1. ✅ Phase 1 complete
-2. Begin Phase 2 implementation (file uploads, static files, rate limiting, security, compression)
-3. Merge `dev` → `main` for stable Phase 1 release
+2. Phase 2 in progress — security headers, rate limiting, compression done
+3. Remaining Phase 2: static file serving, file uploads
+4. Merge `dev` → `main` for stable release after Phase 2
 
 ---
 
 **Last Updated:** 2026-02-17
-**Status:** Phase 1 complete, Phase 2 ready to start
+**Status:** Phase 2 in progress (3/5 tasks complete)
