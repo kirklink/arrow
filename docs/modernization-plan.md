@@ -4,7 +4,7 @@
 
 **Timeline:** 12 weeks (3 months)
 
-**Current Status:** ~40-50% feature-complete compared to modern frameworks
+**Current Status:** Phase 1 complete. ~55-60% feature-complete compared to modern frameworks
 
 ---
 
@@ -17,119 +17,24 @@
 
 ---
 
-## Phase 1: Critical REST API Features (Weeks 1-3)
+## Phase 1: Critical REST API Features ✅
 
-### 1.1 Complete HTTP Method Support
-**Duration:** 1 day
-**Task:** Add PATCH and HEAD methods
+### 1.1 Complete HTTP Method Support ✅
+Added PATCH and HEAD methods to Router with constants, Dart docs, and 15 tests.
 
-**Implementation:**
-- Add constants to `lib/src/constants.dart`
-- Add `router.patch()` and `router.head()` methods
-- Write tests for new methods
-- Add Dart docs with usage examples
+### 1.2 Query Parameter Helpers ✅
+Added `queryParam()`, `queryParams()`, `queryInt()`, `queryBool()` on Request. Also fixed `Parameters.get()` to return null instead of empty string for missing params. 27 tests.
 
-**Why:** Required for proper REST API compliance
+### 1.3 Endorse Validation Integration ✅
+Added endorse as workspace submodule. No validation middleware — validation stays in the handler as a one-liner (`Model.$endorse.validate(req.content!.map)`), which is naturally typed. HttpException is the integration point: `throw BadRequestException('Validation failed', endorse.errors)`.
 
----
+### 1.4 Enhanced Error Handling ✅
+Created HttpException hierarchy (BadRequest 400, Unauthorized 401, Forbidden 403, NotFound 404, Conflict 409, InternalServer 500). Router.serve() auto-catches and converts to standard JSON error response. Widened Responder errors from `Map<String, String>` to `Map<String, Object>` for nested structures. Added generic `Responder.error()` method. 23 tests.
 
-### 1.2 Query Parameter Helper (REVISED)
-**Duration:** 1 day
-**Task:** Add convenience wrapper for query parameters
+### 1.5 Cookie Support ✅
+`req.cookies` getter (cached `Map<String, String>`) and `req.cookie(name)` for reading. `req.respond.setCookie()` with full options (httpOnly, secure, maxAge, expires, path, domain, sameSite) and `clearCookie()` for writing. No middleware needed — dart:io handles parsing/serialization. httpOnly defaults true. Signed cookies deferred (REST APIs use JWT). 27 tests.
 
-**Current State:**
-- `req.uri.queryParameters` already works (Dart Uri built-in)
-- Returns `Map<String, String>` (single values only)
-- Arrays like `?tags=a&tags=b` are not well-supported
-
-**Implementation:**
-- Verify current query parameter access works correctly
-- Add helper methods to `Request` class for common patterns:
-  - `req.queryParam(String key, {String? defaultValue})` - single value
-  - `req.queryParams(String key)` - list of values
-  - `req.queryInt(String key, {int? defaultValue})` - type conversion
-  - `req.queryBool(String key, {bool defaultValue = false})` - boolean
-- Write tests for all query parameter patterns
-- Document with examples in Dart docs
-
-**Why:** Convenience methods for common query parameter operations
-
----
-
-### 1.3 Request Validation Framework Integration
-**Duration:** 3-5 days
-**Task:** Integrate existing validation framework as submodule
-
-**User Provided:** Separate validation framework package
-
-**Implementation:**
-1. Add validation framework as git submodule
-2. Create Arrow-specific validation middleware
-3. Integration examples:
-   - Path parameter validation
-   - Query parameter validation
-   - Request body validation
-   - Header validation
-4. Error handling integration with Arrow's response format
-5. Write comprehensive tests
-6. Document validation patterns and examples
-
-**Why:** Validation is essential but should be modular and reusable
-
----
-
-### 1.4 Enhanced Error Handling (REVISED)
-**Duration:** 2-3 days
-**Task:** Improve existing error handling system
-
-**Current State:**
-- `ArrowException` exists
-- Response methods: `unauthorized()`, `forbidden()`, `notFound()`, `badRequest()`, `serverError()`
-- Each takes `msg` and `errors` map
-- Returns standardized JSON format
-
-**Implementation:**
-1. **Audit existing error handling:**
-   - Review how errors are currently caught and handled
-   - Check Recoverer implementation
-   - Identify gaps and limitations
-
-2. **Extend error types:**
-   - Create error class hierarchy if beneficial
-   - Consider: ValidationError, AuthenticationError, etc.
-   - Ensure compatibility with existing `responder.dart` methods
-
-3. **Error middleware chain:**
-   - Allow custom error transformers
-   - Error logging hooks
-   - Error reporting integration points
-
-4. **Improve error responses:**
-   - Better stack traces in development
-   - More detailed validation error formatting
-   - Error categorization
-
-5. Write tests covering error scenarios
-6. Document error handling patterns
-
-**Why:** Build on existing system rather than replace it
-
----
-
-### 1.5 Cookie Support
-**Duration:** 3 days
-**Task:** Add cookie parsing and setting
-
-**Implementation:**
-1. Cookie parser middleware
-2. Add `req.cookies` accessor (Map<String, String>)
-3. Add `res.setCookie()` method with options:
-   - httpOnly, secure, sameSite, maxAge, path, domain
-4. Signed cookie support for security
-5. Write comprehensive cookie tests
-6. Document cookie patterns and security best practices
-
-**Why:** Essential for authentication, sessions, tracking
+**Phase 1 total: 192 passing tests.**
 
 ---
 
@@ -362,51 +267,30 @@
 
 ---
 
-## Quick Wins for Week 1
-
-Priority items to build momentum:
-
-1. **Add PATCH/HEAD methods** (4 hours)
-   - Complete REST support
-   - Easy win
-
-2. **Query parameter helpers** (4 hours)
-   - Verify existing functionality
-   - Add convenience methods
-
-3. **Fix parameter handling** (2 hours)
-   - Return null instead of empty string
-   - Breaking change but better API
-
-4. **Write 10-15 tests** (2 hours)
-   - Start testing habit
-   - Cover existing features
-
----
-
-## Success Metrics
+## Progress
 
 ### Feature Coverage
 - ✅ All HTTP methods (GET, POST, PUT, PATCH, DELETE, HEAD)
-- ✅ Request validation framework
+- ✅ Query parameter helpers
+- ✅ Request validation framework (endorse integration)
+- ✅ Enhanced error handling (HttpException hierarchy)
 - ✅ Cookie support
-- ✅ File uploads
-- ✅ Static file serving
-- ✅ Rate limiting
-- ✅ Security headers
-- ✅ Compression
-- ✅ Streaming responses
-- ✅ WebSocket support
-- ✅ Flexible response types
-- ✅ Request timeouts
-- ✅ Graceful shutdown
+- ⬜ File uploads
+- ⬜ Static file serving
+- ⬜ Rate limiting
+- ⬜ Security headers
+- ⬜ Compression
+- ⬜ Streaming responses
+- ⬜ WebSocket support
+- ⬜ Flexible response types
+- ⬜ Request timeouts
+- ⬜ Graceful shutdown
 
 ### Quality Metrics
-- **Tests:** 100+ passing tests
-- **Coverage:** >80% code coverage
-- **Documentation:** Complete Dart docs + guides
-- **Examples:** 5 working example projects
-- **Performance:** Comparable to Gin/Echo benchmarks
+- **Tests:** 192 passing tests (target: 250+)
+- **Coverage:** TBD (target: >80%)
+- **Documentation:** Dart docs on all new public APIs
+- **Examples:** arrow_example demonstrates all Phase 1 features
 
 ### Developer Experience
 - Clear error messages
@@ -446,11 +330,13 @@ These are intentionally excluded from this plan:
 
 ## Breaking Changes
 
-### Anticipated Breaking Changes
-1. Parameter handling returning null instead of empty string
-2. Response format flexibility (optional breaking change)
-3. Error handling enhancements may change error structure
-4. Cookie middleware may affect request lifecycle
+### Breaking Changes Made (Phase 1)
+1. `Parameters.get()` returns `null` instead of empty string for missing params
+2. Responder error methods accept `Map<String, Object>` instead of `Map<String, String>`
+
+### Anticipated Breaking Changes (Phases 2-4)
+1. Response format flexibility (optional breaking change)
+2. Additional error handling changes possible
 
 ### Migration Strategy
 1. Document all breaking changes clearly
@@ -498,30 +384,24 @@ These are intentionally excluded from this plan:
 
 ## Risk Management
 
-### Potential Blockers
-1. **HTTP server test timeout** - Needs investigation and fix
-2. **Dart SDK limitations** - May need workarounds for some features
-3. **Breaking changes** - Must carefully manage API compatibility
-4. **Performance regressions** - Benchmarking required
+### Resolved Blockers
+1. ~~HTTP server test timeout~~ — Solved with Completer-based test helper (see `docs/http-server-testing-solution.md`)
+2. ~~Flaky pipeline tests~~ — Fixed async timing assertions
 
-### Mitigation Strategies
-1. Tackle test infrastructure early
-2. Research Dart limitations before design
-3. Use deprecation warnings for breaking changes
-4. Regular performance testing
+### Remaining Risks
+1. **Dart SDK limitations** — May need workarounds for some features
+2. **Performance regressions** — Benchmarking needed before 1.0
+3. **Endorse runtime** — ClassResult/ListResult commented out, needs restoration before code gen works
 
 ---
 
 ## Next Steps
 
-1. ✅ Review and approve this plan
-2. Start Week 1 Quick Wins
-3. Set up project tracking (GitHub issues/projects)
-4. Begin Phase 1 implementation
-5. Regular progress reviews after each phase
+1. ✅ Phase 1 complete
+2. Begin Phase 2 implementation (file uploads, static files, rate limiting, security, compression)
+3. Merge `dev` → `main` for stable Phase 1 release
 
 ---
 
-**Last Updated:** 2025-02-13
-**Status:** Awaiting approval
-**Author:** Claude Code Analysis
+**Last Updated:** 2026-02-17
+**Status:** Phase 1 complete, Phase 2 ready to start
