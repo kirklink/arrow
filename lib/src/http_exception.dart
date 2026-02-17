@@ -63,6 +63,14 @@ class ConflictException extends HttpException {
       : super(409, message, errors: errors);
 }
 
+/// 429 Too Many Requests — rate limit exceeded.
+class TooManyRequestsException extends HttpException {
+  const TooManyRequestsException(
+      [String message = 'Too Many Requests',
+      Map<String, Object> errors = const <String, Object>{}])
+      : super(429, message, errors: errors);
+}
+
 /// 500 Internal Server Error — unexpected server failure.
 class InternalServerException extends HttpException {
   const InternalServerException(

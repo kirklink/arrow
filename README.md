@@ -115,10 +115,12 @@ req.respond.badRequest(msg: 'Invalid input');      // 400
 req.respond.unauthorized(msg: 'Login required');   // 401
 req.respond.forbidden(msg: 'Access denied');       // 403
 req.respond.notFound(msg: 'Resource not found');   // 404
+req.respond.tooManyRequests(msg: 'Slow down');     // 429
 req.respond.serverError();                         // 500
 
 // Custom responses
 req.respond.raw(418, {'message': "I'm a teapot"});
+req.respond.error(422, msg: 'Unprocessable');
 ```
 
 ### Middleware
@@ -146,6 +148,8 @@ apiRouter.get('/users', getUsers);
 - **logger()** - Request logging
 - **readJsonContent()** - Parse JSON request bodies
 - **enforceJsonContentType()** - Require `Content-Type: application/json`
+- **securityHeaders()** - Helmet-style security response headers (CSP, HSTS, etc.)
+- **rateLimit()** - IP-based rate limiting with configurable windows
 
 #### Custom Middleware
 
@@ -451,19 +455,23 @@ See [test/README.md](test/README.md) for testing documentation.
 **Status:** Active development
 
 ### Recently Completed
-- ✅ Null-safety support
-- ✅ Async middleware bug fix
-- ✅ Comprehensive test suite (100 tests)
-- ✅ HTTP test helpers
+- ✅ All HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD)
+- ✅ Query parameter helpers with type coercion
+- ✅ HttpException hierarchy for structured error handling
+- ✅ Cookie support (reading and writing)
+- ✅ Security headers middleware (Helmet-style)
+- ✅ Rate limiting middleware (fixed window, configurable)
+- ✅ Response compression (gzip via `autoCompress`)
+- ✅ 242 passing tests
 
 ### Roadmap
-- Request validation framework
+- Static file serving
 - File upload support
+- Streaming responses
 - WebSocket support
-- OpenAPI/Swagger generation
-- Rate limiting middleware
+- Graceful shutdown
 
-See [docs/assessment.md](docs/assessment.md) for detailed technical assessment.
+See [docs/modernization-plan.md](docs/modernization-plan.md) for the full roadmap.
 
 ## Why Arrow?
 

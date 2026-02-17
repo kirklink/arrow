@@ -87,6 +87,27 @@ void main() {
     });
   });
 
+  group('TooManyRequestsException', () {
+    test('should have status code 429', () {
+      const e = TooManyRequestsException();
+
+      expect(e.statusCode, equals(429));
+      expect(e.message, equals('Too Many Requests'));
+    });
+
+    test('should accept custom message', () {
+      const e = TooManyRequestsException('Rate limit exceeded');
+
+      expect(e.message, equals('Rate limit exceeded'));
+    });
+
+    test('should be an HttpException', () {
+      const e = TooManyRequestsException();
+
+      expect(e, isA<HttpException>());
+    });
+  });
+
   group('ConflictException', () {
     test('should have status code 409', () {
       const e = ConflictException();

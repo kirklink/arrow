@@ -391,6 +391,49 @@ void main() {
       });
     });
 
+    group('tooManyRequests()', () {
+      test('should create 429 response with default message', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        final response = responder.tooManyRequests();
+
+        expect(response, isNotNull);
+        expect(req.innerRequest.response.statusCode, equals(429));
+        expect(req.isAlive, isFalse);
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should create 429 response with custom message', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.tooManyRequests(msg: 'Rate limit exceeded');
+
+        expect(req.innerRequest.response.statusCode, equals(429));
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should throw if response already set', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.tooManyRequests();
+
+        expect(
+          () => responder.tooManyRequests(),
+          throwsA(isA<ArrowException>()),
+        );
+
+        await cleanupMockRequest(httpReq);
+      });
+    });
+
     group('error()', () {
       test('should create response with custom status code', () async {
         final httpReq = await createMockHttpRequest();

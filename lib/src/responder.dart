@@ -106,6 +106,19 @@ class Responder {
     return _response;
   }
 
+  /// 429 Too Many Requests — rate limit exceeded.
+  Response tooManyRequests(
+      {String msg = 'Too Many Requests',
+      Map<String, Object> errors = const <String, Object>{}}) {
+    if (_complete) {
+      throw ArrowException('The response has already been set.');
+    }
+    final code = 429;
+    _complete = true;
+    _response = Response(_errorResponse(_request, code, msg, errors));
+    return _response;
+  }
+
   Response serverError() {
     if (_complete) {
       throw ArrowException('The response has already been set.');
