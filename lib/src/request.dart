@@ -107,4 +107,38 @@ class Request {
     if (value == 'false' || value == '0' || value == 'no') return false;
     return defaultValue;
   }
+
+  // Cookie helpers.
+
+  Map<String, String>? _cookieMap;
+
+  /// All cookies as a Map of name to value.
+  ///
+  /// Parsed from the Cookie header by dart:io. The map is cached
+  /// on first access. Returns an empty map if no cookies are present.
+  ///
+  /// ```dart
+  /// // Cookie: session=abc123; theme=dark
+  /// final all = req.cookies; // {'session': 'abc123', 'theme': 'dark'}
+  /// ```
+  Map<String, String> get cookies {
+    _cookieMap ??= {
+      for (final cookie in innerRequest.cookies) cookie.name: cookie.value
+    };
+    return _cookieMap!;
+  }
+
+  /// Get a single cookie value by name.
+  ///
+  /// Returns the cookie value for [name], or [defaultValue] if the
+  /// cookie is not present. Returns `null` if the cookie is missing
+  /// and no default is provided.
+  ///
+  /// ```dart
+  /// final session = req.cookie('session');                    // 'abc123'
+  /// final fallback = req.cookie('lang', defaultValue: 'en'); // 'en'
+  /// ```
+  String? cookie(String name, {String? defaultValue}) {
+    return cookies[name] ?? defaultValue;
+  }
 }

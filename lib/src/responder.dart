@@ -133,6 +133,60 @@ class Responder {
     return _response;
   }
 
+  /// Set a cookie on the response.
+  ///
+  /// Must be called before any terminal response method ([ok], [badRequest],
+  /// etc.) since those finalize the response. Cookies are serialized to
+  /// Set-Cookie headers automatically by dart:io.
+  ///
+  /// ```dart
+  /// req.respond.setCookie('session', 'abc123',
+  ///   httpOnly: true,
+  ///   secure: true,
+  ///   maxAge: Duration(hours: 24),
+  ///   path: '/',
+  ///   sameSite: SameSite.strict,
+  /// );
+  /// return req.respond.ok(data: {'loggedIn': true});
+  /// ```
+  void setCookie(
+    String name,
+    String value, {
+    Duration? maxAge,
+    DateTime? expires,
+    String? path,
+    String? domain,
+    bool httpOnly = true,
+    bool secure = false,
+    io.SameSite? sameSite,
+  }) {
+    if (_complete) {
+      throw ArrowException('Cannot set cookie after response has been sent.');
+    }
+    final cookie = io.Cookie(name, value);
+    if (maxAge != null) cookie.maxAge = maxAge.inSeconds;
+    if (expires != null) cookie.expires = expires;
+    if (path != null) cookie.path = path;
+    if (domain != null) cookie.domain = domain;
+    cookie.httpOnly = httpOnly;
+    cookie.secure = secure;
+    if (sameSite != null) cookie.sameSite = sameSite;
+    _request.innerRequest.response.cookies.add(cookie);
+  }
+
+  /// Clear a cookie by setting it with an empty value and maxAge of 0.
+  ///
+  /// The [path] and [domain] must match the original cookie for the
+  /// browser to recognize which cookie to delete.
+  ///
+  /// ```dart
+  /// req.respond.clearCookie('session', path: '/');
+  /// return req.respond.ok(data: {'loggedOut': true});
+  /// ```
+  void clearCookie(String name, {String? path, String? domain}) {
+    setCookie(name, '', maxAge: Duration.zero, path: path, domain: domain);
+  }
+
   Request _errorResponse(
       Request request, int code, String msg, Map<String, Object> errors) {
     final wrapped =

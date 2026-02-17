@@ -72,6 +72,7 @@ Future<HttpRequest> createMockHttpRequest({
   String path = '/test',
   String method = 'GET',
   Map<String, String>? headers,
+  Map<String, String>? cookies,
   String? body,
   Duration timeout = const Duration(seconds: 5),
 }) async {
@@ -123,6 +124,13 @@ Future<HttpRequest> createMockHttpRequest({
     if (headers != null) {
       headers.forEach((key, value) {
         request.headers.set(key, value);
+      });
+    }
+
+    // Add cookies if provided
+    if (cookies != null) {
+      cookies.forEach((name, value) {
+        request.cookies.add(Cookie(name, value));
       });
     }
 
