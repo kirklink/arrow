@@ -6,11 +6,18 @@ import 'request.dart';
 class Server {
   Router _router;
   int _port;
+  bool _compress;
 
-  Server(this._router, this._port);
+  /// Creates an Arrow server.
+  ///
+  /// [compress] enables gzip compression for clients that send
+  /// `Accept-Encoding: gzip`. Defaults to `true`.
+  Server(this._router, this._port, {bool compress = true})
+      : _compress = compress;
 
   Future start({bool isOnProduction = false, bool forceSSL = false}) async {
     final _server = await io.HttpServer.bind(io.InternetAddress.anyIPv4, _port);
+    _server.autoCompress = _compress;
     if (!isOnProduction)
       print('Server listening on localhost, port ${_server.port}');
     await for (io.HttpRequest req in _server) {
