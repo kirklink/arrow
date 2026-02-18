@@ -1,3 +1,3 @@
 export 'src/client_helpers/arrow_response.dart';
 export 'src/client_helpers/arrow_request.dart';
-export 'src/middlewares/firebase_authentication/claims_from_context.dart';
+export 'src/middlewares/jwt_auth.dart' show getJwt, jwtKey;

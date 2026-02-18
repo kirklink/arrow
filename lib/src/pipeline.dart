@@ -5,7 +5,6 @@ import 'response_middleware.dart';
 import 'handler.dart';
 import 'request.dart';
 import 'response.dart';
-import 'guard.dart';
 
 typedef Future<Request> _WrappedRequestHandler(Request req);
 typedef Future<Response> _WrappedResponseHandler(Response res);
@@ -13,17 +12,16 @@ typedef Future<Response> _WrappedResponseHandler(Response res);
 class Pipeline {
   final _requestHandlers = <_WrappedRequestHandler>[];
   final _responseHandlers = <_WrappedResponseHandler>[];
-  final Guard? _guard;
 
-  Pipeline([this._guard]);
+  Pipeline();
 
-  Pipeline._clone(Pipeline src, [this._guard]) {
+  Pipeline._clone(Pipeline src) {
     _requestHandlers.addAll(List.from(src._requestHandlers));
     _responseHandlers.addAll(List.from(src._responseHandlers));
   }
 
-  Pipeline clone([Guard? guard]) {
-    return Pipeline._clone(this, guard);
+  Pipeline clone() {
+    return Pipeline._clone(this);
   }
 
   _WrappedRequestHandler _wrapRequestHandler(
@@ -74,13 +72,6 @@ class Pipeline {
 
   Future<Response> serve(Request req, Handler endpoint,
       {bool forceHandlerToRun = false}) async {
-    if (_guard != null) {
-      final guardAllows = await _guard!(req);
-      if (!guardAllows) {
-        return req.respond.forbidden();
-      }
-    }
-
     if (_requestHandlers.isNotEmpty) {
       req = await _processRequestHandlers(req, _requestHandlers);
     }

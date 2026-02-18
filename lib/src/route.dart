@@ -6,7 +6,6 @@ import 'request.dart';
 import 'response.dart';
 import 'response_middleware.dart';
 import 'request_middleware.dart';
-import 'guard.dart';
 import 'constants.dart' show RouterMethods;
 import 'pipeline.dart';
 
@@ -47,10 +46,6 @@ class Route {
       {bool useAlways = false}) {
     _pipeline = _pipeline.clone();
     _pipeline.onResponse(responseMiddleware, useAlways: useAlways);
-  }
-
-  void guard(Guard guard) {
-    _pipeline = _pipeline.clone(guard);
   }
 
   Future<Response> serve(Request req) async {
