@@ -14,13 +14,15 @@ class Arrow {
   Future run(RouterBuilder routerBuilder,
       {int port = 8080,
       bool forceSSL = false,
-      bool printRoutes = false}) async {
+      bool printRoutes = false,
+      Duration? requestTimeout,
+      Duration shutdownTimeout = const Duration(seconds: 30)}) async {
     final router = routerBuilder();
     if (printRoutes) {
       _printRoutes(router);
     }
-    ;
-    final server = Server(router, port);
+    final server = Server(router, port,
+        requestTimeout: requestTimeout, shutdownTimeout: shutdownTimeout);
     await server.start(forceSSL: forceSSL, isOnProduction: isOnProduction);
     return;
   }

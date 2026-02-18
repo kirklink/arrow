@@ -35,11 +35,9 @@ class Router {
   /// take a [Handler], which is the function to execute for the specified
   /// route.
   /// Middleware are executed in the following order:
-  /// 1. Synchronous [RequestMiddleware] in the order they are added to the [Router]
-  /// 2. Asynchronous [RequestMiddleware] asynchronously in no guaranteed order until they are all completed
-  /// 3. The request [Handler] which initiates the response
-  /// 4. Asynchronous [ResponseMiddleware] asynchronously in no guaranteed order until they are all completed
-  /// 5. Synchronous [ResponseMiddleware] in the order they are added to the [Router]
+  /// 1. [RequestMiddleware] in the order they are added to the [Router]
+  /// 2. The request [Handler] which initiates the response
+  /// 3. [ResponseMiddleware] in the order they are added to the [Router]
   /// A [Router] can also be created as a group, which is a sub-router for routes
   /// that have the same partial URIs. These groups can inherit or have their own
   /// middleware stack.
@@ -97,19 +95,17 @@ class Router {
 
   /// Add a [RequestMiddleware] to this router's middleware stack
   void onRequest(RequestMiddleware requestMiddleware,
-      {bool runAsync = false, bool useAlways = false}) {
+      {bool useAlways = false}) {
     if (!_pipelineIsClosed()) {
-      _pipeline.onRequest(requestMiddleware,
-          runAsync: runAsync, useAlways: useAlways);
+      _pipeline.onRequest(requestMiddleware, useAlways: useAlways);
     }
   }
 
   /// Add a [ResponseMiddleware] to this router's middleware stack
   void onResponse(ResponseMiddleware responseMiddleware,
-      {bool runAsync = false, bool useAlways = false}) {
+      {bool useAlways = false}) {
     if (!_pipelineIsClosed()) {
-      _pipeline.onResponse(responseMiddleware,
-          runAsync: runAsync, useAlways: useAlways);
+      _pipeline.onResponse(responseMiddleware, useAlways: useAlways);
     }
   }
 

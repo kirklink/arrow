@@ -168,7 +168,7 @@ Request handlePreFlight(Request req, Cors cors) {
   }
 
   req.respond.code(200);
-  req.cancel();
+  req.cancel(); // code() doesn't auto-cancel — only error responses do
   return req;
 }
 

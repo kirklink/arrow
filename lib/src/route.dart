@@ -38,17 +38,15 @@ class Route {
   }
 
   void addOnRequest(RequestMiddleware requestMiddleware,
-      {bool runAsync = false, bool useAlways = false}) {
+      {bool useAlways = false}) {
     _pipeline = _pipeline.clone();
-    _pipeline.onRequest(requestMiddleware,
-        runAsync: runAsync, useAlways: useAlways);
+    _pipeline.onRequest(requestMiddleware, useAlways: useAlways);
   }
 
   void addOnResponse(ResponseMiddleware responseMiddleware,
-      {bool runAsync = false, bool useAlways = false}) {
+      {bool useAlways = false}) {
     _pipeline = _pipeline.clone();
-    _pipeline.onResponse(responseMiddleware,
-        runAsync: runAsync, useAlways: useAlways);
+    _pipeline.onResponse(responseMiddleware, useAlways: useAlways);
   }
 
   void guard(Guard guard) {

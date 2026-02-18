@@ -6,5 +6,6 @@ export 'src/middlewares/enforce_json_content_types.dart';
 export 'src/middlewares/cors.dart';
 export 'src/middlewares/security_headers.dart';
 export 'src/middlewares/rate_limit.dart';
+export 'src/middlewares/request_id.dart';
 export 'src/middlewares/firebase_authentication/firebase_authentication.dart';
 export 'src/recoverer.dart';

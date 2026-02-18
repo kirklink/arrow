@@ -11,19 +11,15 @@ typedef Future<Request> _WrappedRequestHandler(Request req);
 typedef Future<Response> _WrappedResponseHandler(Response res);
 
 class Pipeline {
-  final _syncRequestHandlers = <_WrappedRequestHandler>[];
-  final _syncResponseHandlers = <_WrappedResponseHandler>[];
-  final _asyncRequestHandlers = <_WrappedRequestHandler>[];
-  final _asyncResponseHandlers = <_WrappedResponseHandler>[];
+  final _requestHandlers = <_WrappedRequestHandler>[];
+  final _responseHandlers = <_WrappedResponseHandler>[];
   final Guard? _guard;
 
   Pipeline([this._guard]);
 
   Pipeline._clone(Pipeline src, [this._guard]) {
-    _syncRequestHandlers.addAll(List.from(src._syncRequestHandlers));
-    _syncResponseHandlers.addAll(List.from(src._syncResponseHandlers));
-    _asyncRequestHandlers.addAll(List.from(src._asyncRequestHandlers));
-    _asyncResponseHandlers.addAll(List.from(src._asyncResponseHandlers));
+    _requestHandlers.addAll(List.from(src._requestHandlers));
+    _responseHandlers.addAll(List.from(src._responseHandlers));
   }
 
   Pipeline clone([Guard? guard]) {
@@ -65,25 +61,15 @@ class Pipeline {
   }
 
   void onRequest(RequestMiddleware requestMiddleware,
-      {bool runAsync = false, bool useAlways = false}) {
-    if (runAsync) {
-      _asyncRequestHandlers
-          .add(_wrapRequestHandler(requestMiddleware, useAlways));
-    } else {
-      _syncRequestHandlers
-          .add(_wrapRequestHandler(requestMiddleware, useAlways));
-    }
+      {bool useAlways = false}) {
+    _requestHandlers
+        .add(_wrapRequestHandler(requestMiddleware, useAlways));
   }
 
   void onResponse(ResponseMiddleware responseMiddleware,
-      {bool runAsync = false, bool useAlways = false}) {
-    if (runAsync) {
-      _asyncResponseHandlers
-          .add(_wrapResponseHandler(responseMiddleware, useAlways));
-    } else {
-      _syncResponseHandlers
-          .add(_wrapResponseHandler(responseMiddleware, useAlways));
-    }
+      {bool useAlways = false}) {
+    _responseHandlers
+        .add(_wrapResponseHandler(responseMiddleware, useAlways));
   }
 
   Future<Response> serve(Request req, Handler endpoint,
@@ -95,30 +81,22 @@ class Pipeline {
       }
     }
 
-    if (_syncRequestHandlers.isNotEmpty) {
-      req = await _processSyncRequestHandlers(req, _syncRequestHandlers);
-    }
-
-    if (_asyncRequestHandlers.isNotEmpty) {
-      req = await _processAsyncRequestHandlers(req, _asyncRequestHandlers);
+    if (_requestHandlers.isNotEmpty) {
+      req = await _processRequestHandlers(req, _requestHandlers);
     }
 
     var res = (req.isAlive || forceHandlerToRun)
         ? await endpoint(req)
         : req.respond.serverError();
 
-    if (_asyncResponseHandlers.isNotEmpty) {
-      res = await _processAsyncResponseHandlers(res, _asyncResponseHandlers);
-    }
-
-    if (_syncResponseHandlers.isNotEmpty) {
-      res = await _processSyncResponseHandlers(res, _syncResponseHandlers);
+    if (_responseHandlers.isNotEmpty) {
+      res = await _processResponseHandlers(res, _responseHandlers);
     }
 
     return res;
   }
 
-  Future<Request> _processSyncRequestHandlers(
+  Future<Request> _processRequestHandlers(
       Request req, List<_WrappedRequestHandler> handlers) async {
     for (var handler in handlers) {
       req = await handler(req);
@@ -126,37 +104,11 @@ class Pipeline {
     return req;
   }
 
-  Future<Response> _processSyncResponseHandlers(
+  Future<Response> _processResponseHandlers(
       Response res, List<_WrappedResponseHandler> handlers) async {
     for (var handler in handlers) {
       res = await handler(res);
     }
-    return res;
-  }
-
-  Future<Request> _processAsyncRequestHandlers(
-      Request req, List<_WrappedRequestHandler> handlers) async {
-    if (handlers.length == 0) return Future.value(req);
-    List<Future<Request>> futures = <Future<Request>>[];
-    for (var handler in handlers) {
-      futures.add(handler(req));
-    }
-    // All handlers receive and modify the same mutable Request object.
-    // Wait for all to complete, then return the shared Request.
-    await Future.wait(futures);
-    return req;
-  }
-
-  Future<Response> _processAsyncResponseHandlers(
-      Response res, List<_WrappedResponseHandler> handlers) async {
-    if (handlers.length == 0) return Future.value(res);
-    List<Future<Response>> futures = <Future<Response>>[];
-    for (var handler in handlers) {
-      futures.add(handler(res));
-    }
-    // All handlers receive and modify the same mutable Response object.
-    // Wait for all to complete, then return the shared Response.
-    await Future.wait(futures);
     return res;
   }
 }

@@ -115,7 +115,7 @@ class Responder {
     }
     final code = io.HttpStatus.unauthorized;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors));
+    _response = Response(_writeErrorAndCancel(_request, code, msg, errors));
     return _response;
   }
 
@@ -127,7 +127,7 @@ class Responder {
     }
     final code = io.HttpStatus.notFound;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors));
+    _response = Response(_writeErrorAndCancel(_request, code, msg, errors));
     return _response;
   }
 
@@ -139,7 +139,7 @@ class Responder {
     }
     final code = io.HttpStatus.forbidden;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors));
+    _response = Response(_writeErrorAndCancel(_request, code, msg, errors));
     return _response;
   }
 
@@ -151,7 +151,7 @@ class Responder {
     }
     final code = io.HttpStatus.badRequest;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors));
+    _response = Response(_writeErrorAndCancel(_request, code, msg, errors));
     return _response;
   }
 
@@ -164,7 +164,7 @@ class Responder {
     }
     final code = 429;
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, errors));
+    _response = Response(_writeErrorAndCancel(_request, code, msg, errors));
     return _response;
   }
 
@@ -175,7 +175,7 @@ class Responder {
     final code = io.HttpStatus.internalServerError;
     final msg = 'Server Error';
     _complete = true;
-    _response = Response(_errorResponse(_request, code, msg, const {}));
+    _response = Response(_writeErrorAndCancel(_request, code, msg, const {}));
     return _response;
   }
 
@@ -191,7 +191,7 @@ class Responder {
       throw ArrowException('The response has already been set.');
     }
     _complete = true;
-    _response = Response(_errorResponse(_request, statusCode, msg, errors));
+    _response = Response(_writeErrorAndCancel(_request, statusCode, msg, errors));
     return _response;
   }
 
@@ -244,7 +244,7 @@ class Responder {
     return setCookie(name, '', maxAge: Duration.zero, path: path, domain: domain);
   }
 
-  Request _errorResponse(
+  Request _writeErrorAndCancel(
       Request request, int code, String msg, Map<String, Object> errors) {
     final wrapped =
         json.encode({"ok": false, "errorMessage": msg, "errors": errors});
@@ -256,39 +256,4 @@ class Responder {
     _request.cancel();
     return request;
   }
-
-  // Response redirect(Object location, {bool permanent: true}) {
-  //   _onlyOnce();
-  //   _responseObject = ResponseObject.redirect(location, permanent);
-  //   _response.cancel();
-  //   return _response;
-  // }
-
-
-  // void _onlyOnce() {
-  //   if (_responseObject != null) {
-  //     throw ArrowException('The response object has already been created.');
-  //   }
-  // }
-
-  // Future complete() async {
-  //   if (ResponseObject == null) {
-  //     throw ResponseObjectException('A response has not been created.');
-  //   }
-  //   final srcResponse = _response.request.innerRequest.response;
-  //   if (_responseObject.body != null) {
-  //     srcResponse.headers.set(
-  //         io.HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
-  //     srcResponse.statusCode = _responseObject.statusCode;
-  //     srcResponse.write(_responseObject.body);
-  //   } else if (_responseObject.location != null) {
-  //     srcResponse.statusCode = _responseObject.statusCode;
-  //     srcResponse.redirect(_responseObject.location);
-  //   } else if (_responseObject.body == null) {
-  //     srcResponse.statusCode = _responseObject.statusCode;
-  //   } else {
-  //     srcResponse.statusCode = io.HttpStatus.internalServerError;
-  //   }
-  //   await srcResponse.close();
-  // }
 }

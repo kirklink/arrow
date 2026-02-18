@@ -3,7 +3,7 @@ homepage: "https://github.com/kirklink/arrow"
 description: 'Dart api server.'
 version: 0.1.0-nullsafety.0
 environment:
-  sdk: '>=2.12.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 dependencies:
   http: ^1.1.0
   mime: ^2.0.0

@@ -2,7 +2,7 @@
 
 An opinionated, Express-inspired Dart server framework for rapid REST API development.
 
-[![Dart](https://img.shields.io/badge/dart-%3E%3D2.12.0-blue.svg)](https://dart.dev)
+[![Dart](https://img.shields.io/badge/dart-%3E%3D3.0.0-blue.svg)](https://dart.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Philosophy
@@ -154,6 +154,7 @@ apiRouter.get('/users', getUsers);
 - **enforceJsonContentType()** - Require `Content-Type: application/json`
 - **securityHeaders()** - Helmet-style security response headers (CSP, HSTS, etc.)
 - **rateLimit()** - IP-based rate limiting with configurable windows
+- **requestId()** - `X-Request-ID` correlation (generates UUID or echoes client header)
 
 #### Static File Serving
 
@@ -209,8 +210,8 @@ RequestMiddleware authMiddleware() {
     final token = req.headers.value('authorization');
 
     if (token == null) {
-      req.cancel();
-      return req.respond.unauthorized(msg: 'Missing auth token');
+      req.respond.unauthorized(msg: 'Missing auth token');
+      return req;
     }
 
     final user = await validateToken(token);
@@ -278,9 +279,9 @@ admin.get('/stats', getStats);
 admin.delete('/users/{id}', deleteUser);
 ```
 
-### Request Cancellation
+### Middleware Short-Circuit
 
-Cancel request processing in middleware to short-circuit:
+Error response methods (`badRequest()`, `unauthorized()`, etc.) automatically cancel the request pipeline. No need to call `cancel()` separately:
 
 ```dart
 RequestMiddleware requireAuth() {
@@ -288,8 +289,8 @@ RequestMiddleware requireAuth() {
     final token = req.headers.value('authorization');
 
     if (token == null) {
-      req.cancel();  // Stop processing
-      return req.respond.unauthorized(msg: 'Auth required');
+      req.respond.unauthorized(msg: 'Auth required');  // cancels pipeline
+      return req;
     }
 
     return req;
@@ -437,8 +438,8 @@ RequestMiddleware requireAuth() {
     final token = req.headers.value('authorization');
 
     if (token == null || token.isEmpty) {
-      req.cancel();
-      return req.respond.unauthorized(msg: 'Authentication required');
+      req.respond.unauthorized(msg: 'Authentication required');
+      return req;
     }
 
     // Validate token and load user
@@ -451,13 +452,11 @@ RequestMiddleware requireAuth() {
 
 ## Middleware Execution Order
 
-Arrow executes middleware in a specific, predictable order:
+All middleware runs sequentially in the order it was registered:
 
-1. **Sync Request Middleware** - Sequential, in order added
-2. **Async Request Middleware** - Parallel execution, waits for all
-3. **Handler** - Your route handler
-4. **Async Response Middleware** - Parallel execution, waits for all
-5. **Sync Response Middleware** - Sequential, in order added
+1. **Request Middleware** - Sequential, in order added
+2. **Handler** - Your route handler
+3. **Response Middleware** - Sequential, in order added
 
 ## HTTP Methods
 
@@ -482,9 +481,10 @@ Supported HTTP methods:
 ```dart
 await app.run(
   routerBuilder,
-  port: 8080,              // Default port (overridden by ARROW_PORT)
-  forceSSL: false,         // Redirect HTTP to HTTPS
-  printRoutes: true,       // Print all routes on startup
+  port: 8080,                                  // Default port (overridden by ARROW_PORT)
+  forceSSL: false,                             // Redirect HTTP to HTTPS
+  printRoutes: true,                           // Print all routes on startup
+  requestTimeout: Duration(seconds: 30),       // Global request timeout (optional)
 );
 ```
 

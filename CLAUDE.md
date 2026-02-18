@@ -6,7 +6,7 @@ This file contains instructions and context for Claude Code when working on the 
 
 Arrow is an opinionated, Express-inspired Dart server framework for rapid REST API development. It's designed for the 80-90% use case where you need a standard JSON REST API with minimal boilerplate.
 
-**Current Status**: Phase 2 complete. ~75-80% feature-complete compared to modern frameworks (Express, Hono, Gin, Echo). 299 passing tests.
+**Current Status**: Architecture cleanup complete. ~85-90% feature-complete compared to modern frameworks (Express, Hono, Gin, Echo). 327 passing tests.
 
 **Active Development**: Following a 12-week modernization plan. See `docs/modernization-plan.md` for details.
 
@@ -97,7 +97,11 @@ import 'package:arrow/arrow.dart';
 import 'package:arrow/middlewares.dart';
 
 void main() {
-  Arrow().run(createRouter, port: 8080, printRoutes: true);
+  Arrow().run(createRouter,
+    port: 8080,
+    printRoutes: true,
+    requestTimeout: Duration(seconds: 30), // optional, no timeout by default
+  );
 }
 
 Router createRouter() {
@@ -202,8 +206,7 @@ typedef Future<Response> ResponseMiddleware(Response res);
 
 ### Registration
 ```dart
-router.onRequest(myMiddleware());                            // sync, all routes
-router.onRequest(myMiddleware(), runAsync: true);             // async (concurrent)
+router.onRequest(myMiddleware());                            // all routes, sequential
 router.onRequest(myMiddleware(), useAlways: true);            // runs even if cancelled
 router.onResponse(myResponseMiddleware());
 
@@ -220,6 +223,7 @@ enforceJsonContentType()                 // validates Content-Type by HTTP metho
 CorsMiddleware(Cors(...))                // CORS headers + preflight
 securityHeaders([SecurityHeadersConfig]) // Helmet-style security headers
 rateLimit([RateLimitConfig])             // IP-based fixed-window rate limiting
+requestId()                              // X-Request-ID correlation (generates or echoes)
 loggerIn()                               // request logger (start)
 loggerOut()                              // response logger (end)
 ```
@@ -230,8 +234,8 @@ RequestMiddleware requireAuth() {
   return (Request req) async {
     final token = req.headers.value('authorization');
     if (token == null) {
-      req.cancel();
-      return req.respond.unauthorized(msg: 'Auth required');
+      req.respond.unauthorized(msg: 'Auth required'); // auto-cancels pipeline
+      return req;
     }
     return req;
   };
@@ -278,8 +282,9 @@ router.serveStaticFiles('/public', 'web/public', StaticFilesConfig(
 
 ## Gotchas
 - `req.content` is null until `readJsonContent()` middleware runs
+- Error response methods (`badRequest()`, `unauthorized()`, etc.) auto-cancel the pipeline — no need to call `req.cancel()` separately
 - `cancel()` stops the pipeline — middleware with `useAlways: true` still runs
 - Response is JSON-only (no HTML/template rendering)
 - Context keys must be created via `Context.makeKey()` (UUID strings)
-- Middleware execution order: sync request → async request → handler → async response → sync response
-- SDK constraint: `>=2.12.0 <4.0.0` — no Dart 3 records/patterns syntax
+- Middleware execution order: request middleware (sequential) → handler → response middleware (sequential)
+- SDK constraint: `>=3.0.0 <4.0.0` — Dart 3 features (records, patterns, sealed) available
