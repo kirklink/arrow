@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:convert' show utf8;
 
 /// Test helpers for Arrow framework tests
 ///
@@ -74,6 +75,7 @@ Future<HttpRequest> createMockHttpRequest({
   Map<String, String>? headers,
   Map<String, String>? cookies,
   String? body,
+  List<int>? bodyBytes,
   Duration timeout = const Duration(seconds: 5),
 }) async {
   final server = await HttpServer.bind('localhost', 0);
@@ -135,7 +137,9 @@ Future<HttpRequest> createMockHttpRequest({
     }
 
     // Write body if provided
-    if (body != null) {
+    if (bodyBytes != null) {
+      request.add(bodyBytes);
+    } else if (body != null) {
       request.write(body);
     }
 
@@ -286,5 +290,66 @@ Future<HttpRequest> createMockPatchRequest({
     method: 'PATCH',
     headers: {'Content-Type': 'application/json'},
     body: body,
+  );
+}
+
+/// A file to include in a mock multipart request.
+class MockMultipartFile {
+  final String fieldName;
+  final String filename;
+  final String contentType;
+  final List<int> bytes;
+  MockMultipartFile(this.fieldName, this.filename, this.contentType, this.bytes);
+}
+
+/// Creates a mock multipart/form-data POST request for testing file uploads.
+///
+/// Builds a proper multipart body from [fields] and [files], sets the
+/// Content-Type header with boundary, and returns the captured HttpRequest.
+///
+/// ```dart
+/// final req = await createMockMultipartRequest(
+///   fields: {'description': 'My photo'},
+///   files: [MockMultipartFile('avatar', 'photo.jpg', 'image/jpeg', [0xFF, 0xD8])],
+/// );
+/// ```
+Future<HttpRequest> createMockMultipartRequest({
+  String path = '/test',
+  Map<String, String> fields = const {},
+  List<MockMultipartFile> files = const [],
+  String? boundary,
+}) {
+  boundary ??= '----ArrowTestBoundary';
+
+  final bodyParts = <List<int>>[];
+
+  for (final entry in fields.entries) {
+    bodyParts.add(utf8.encode(
+        '--$boundary\r\n'
+        'content-disposition: form-data; name="${entry.key}"\r\n'
+        '\r\n'
+        '${entry.value}\r\n'));
+  }
+
+  for (final file in files) {
+    bodyParts.add(utf8.encode(
+        '--$boundary\r\n'
+        'content-disposition: form-data; name="${file.fieldName}"; '
+        'filename="${file.filename}"\r\n'
+        'content-type: ${file.contentType}\r\n'
+        '\r\n'));
+    bodyParts.add(file.bytes);
+    bodyParts.add(utf8.encode('\r\n'));
+  }
+
+  bodyParts.add(utf8.encode('--$boundary--\r\n'));
+
+  final allBytes = bodyParts.expand((b) => b).toList();
+
+  return createMockHttpRequest(
+    path: path,
+    method: 'POST',
+    headers: {'Content-Type': 'multipart/form-data; boundary=$boundary'},
+    bodyBytes: allBytes,
   );
 }

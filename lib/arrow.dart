@@ -9,3 +9,5 @@ export 'src/guard.dart' show Guard;
 export 'src/http_exception.dart';
 export 'src/mime_type.dart';
 export 'src/static_files.dart' show StaticFilesConfig;
+export 'src/uploaded_file.dart';
+export 'src/multipart_form_data.dart';
