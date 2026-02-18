@@ -6,14 +6,14 @@ This file contains instructions and context for Claude Code when working on the 
 
 Arrow is an opinionated, Express-inspired Dart server framework for rapid REST API development. It's designed for the 80-90% use case where you need a standard JSON REST API with minimal boilerplate.
 
-**Current Status**: ~40-50% feature-complete compared to modern frameworks (Express, Hono, Gin, Echo)
+**Current Status**: Phase 2 complete. ~75-80% feature-complete compared to modern frameworks (Express, Hono, Gin, Echo). 299 passing tests.
 
-**Active Development**: Following a 12-week modernization plan to bring Arrow to feature parity with modern frameworks. See `docs/modernization-plan.md` for details.
+**Active Development**: Following a 12-week modernization plan. See `docs/modernization-plan.md` for details.
 
 ## Repository Structure
 
-This is a git submodule within the `dart-wrap` monorepo workspace:
-- Parent repo: `dart-wrap` (wrapper/workspace for Dart packages)
+This is a git submodule within the `dart` monorepo workspace:
+- Parent repo: `dart` (wrapper/workspace for Dart packages)
 - This repo: `arrow` (the core framework)
 - Sibling: `arrow_example` (example applications)
 
@@ -26,7 +26,7 @@ This is a git submodule within the `dart-wrap` monorepo workspace:
 **Workflow:**
 1. Work on `dev` branch for all modernization tasks
 2. Create short-lived feature branches from `dev` for each task:
-   - Naming: `feature/<task-name>` (e.g., `feature/add-patch-head-methods`)
+   - Naming: `feature/<task-name>` (e.g., `feature/file-uploads`)
    - Lifespan: 1-5 days maximum
    - Scope: Single task from modernization plan
 3. Merge feature branches back to `dev` quickly
@@ -37,14 +37,7 @@ This is a git submodule within the `dart-wrap` monorepo workspace:
 - `parked/openapi-codegen` - OpenAPI spec → Dart code generation
 - `parked/openapi-spec-generator` - Dart code → OpenAPI spec generation
 
-These contain experimental work on separate generator packages. Don't modify or merge these until packaging strategy is decided.
-
-**Archived Branches** (historical reference only):
-- `archive/2021-openapi-wip` - 4+ year old experimental OpenAPI work
-
 ## Development Principles
-
-From the modernization plan:
 
 1. **Test as we develop** - Write tests alongside features, not after
 2. **Document as we develop** - Add Dart docs and guides with each feature
@@ -58,19 +51,19 @@ From the modernization plan:
 - `docs/http-server-testing-solution.md` - Testing infrastructure notes
 - `README.md` - Main project documentation
 
-## Modernization Plan Phases
+## Git Workflow Notes
 
-**Phase 1** (Weeks 1-3): Critical REST API Features
-- HTTP methods, query helpers, validation, error handling, cookies
+- **Always work from `dev` branch** unless explicitly instructed otherwise
+- **Feature branches should be atomic** - one task from the plan per branch
+- **Commit frequently** with clear messages
+- **Don't force push** without explicit user permission
 
-**Phase 2** (Weeks 4-6): Production Features
-- File uploads, static files, rate limiting, security, compression
+## Testing
 
-**Phase 3** (Weeks 7-10): Advanced Features
-- Flexible responses, streaming, WebSockets, timeouts, graceful shutdown
-
-**Phase 4** (Weeks 11-12): Polish & Examples
-- Comprehensive tests, documentation, example projects
+- Run tests: `dart test` (uses `dart_test.yaml` with `concurrency: 1`)
+- Write tests alongside each feature
+- Test helpers in `test/test_helpers.dart` — uses real HTTP round-trips via `createMockHttpRequest`
+- Target: >80% code coverage
 
 ## What's Out of Scope
 
@@ -82,31 +75,211 @@ These are intentionally excluded from core framework:
 - OpenAPI generation (separate `arrow_openapi` package)
 - MCP server generation (separate `arrow_mcp_generator` package)
 
-## Git Workflow Notes
+---
 
-- **Always work from `dev` branch** unless explicitly instructed otherwise
-- **Feature branches should be atomic** - one task from the plan per branch
-- **Commit frequently** with clear messages
-- **Don't force push** without explicit user permission
-- **Ask before destructive operations** (deleting branches, force pushing, etc.)
+# Arrow Framework API Reference
 
-## Testing
+Use this section when building applications with Arrow.
 
-- Write tests alongside each feature (not after)
-- Fix HTTP server test timeout issue is a known blocker
-- Target: 100+ passing tests, >80% code coverage
-- Each feature should have unit tests and integration tests
+## Setup
+```yaml
+# pubspec.yaml
+dependencies:
+  arrow:
+    git:
+      url: https://github.com/kirklink/arrow
+      ref: dev
+```
 
-## Documentation
+## App Bootstrap
+```dart
+import 'package:arrow/arrow.dart';
+import 'package:arrow/middlewares.dart';
 
-- Add Dart docs to all public APIs as you write code
-- Update README for major features
-- Add guides to docs/ directory for complex features
-- Include practical examples in documentation
+void main() {
+  Arrow().run(createRouter, port: 8080, printRoutes: true);
+}
 
-## Notes
+Router createRouter() {
+  final router = Router();
+  // register middleware, routes, groups, static mounts
+  return router;
+}
+```
 
-- This project was reorganized on 2026-02-13
-- Several stale branches were archived/parked during cleanup
-- Focus is on core framework modernization
-- Generator packages (MCP, OpenAPI) are parked for future packaging decisions
+## Routing
+```dart
+router.get('/path', handler);
+router.post('/path', handler);
+router.put('/path', handler);
+router.delete('/path', handler);
+router.patch('/path', handler);
+router.head('/path', handler);
+
+// Path params use {name} syntax
+router.get('/users/{id}', (Request req) async {
+  final id = req.params.get('id'); // String?
+  return req.respond.ok(data: {'id': id});
+});
+
+// Groups share a prefix and middleware
+final api = router.group('/api/v1');
+api.get('/items', listItems);
+```
+
+## Handler Signature
+```dart
+typedef Future<Response> Handler(Request req);
+```
+
+## Response Methods (via req.respond)
+
+Arrow enforces a standard JSON envelope: `{"ok": true/false, "data": ..., "errorMessage": ..., "errors": ...}`
+
+```dart
+// Success
+req.respond.ok(data: {'key': 'value'})           // 200
+req.respond.created(data: {'id': 1})             // 201
+req.respond.code(204)                             // status only, no body
+req.respond.raw(200, {'custom': 'shape'})         // bypass envelope
+
+// Errors
+req.respond.badRequest(msg: '...', errors: {...})    // 400
+req.respond.unauthorized(msg: '...')                  // 401
+req.respond.forbidden(msg: '...')                     // 403
+req.respond.notFound(msg: '...')                      // 404
+req.respond.tooManyRequests(msg: '...')               // 429
+req.respond.serverError()                             // 500
+req.respond.error(422, msg: '...')                    // custom code
+
+// Files
+await req.respond.sendFile(File('path/to/file'));
+
+// Cookies (chainable — call before terminal response method)
+req.respond.setCookie('name', 'value', httpOnly: true).ok(data: {...});
+req.respond.clearCookie('name').ok(data: {...});
+```
+
+## Request API
+```dart
+req.method                          // String: 'GET', 'POST', etc.
+req.uri                             // Uri
+req.headers                         // HttpHeaders
+req.params.get('name')              // String? - path parameter
+req.content?.map                    // Map<String, Object> - parsed JSON body
+req.content?.list                   // List - parsed JSON array body
+req.content?.string                 // String - raw JSON string
+req.queryParam('key')               // String?
+req.queryParams('key')              // List<String>
+req.queryInt('key')                 // int?
+req.queryBool('key')                // bool?
+req.cookies                         // Map<String, String>
+req.cookie('name')                  // String?
+req.context                         // Context (key-value store)
+req.cancel()                        // stop pipeline processing
+req.isAlive                         // bool
+```
+
+## Request Context
+```dart
+// Define a key (top-level, once)
+final myKey = Context.makeKey();
+
+// Set in middleware
+req.context.setOrReplace<MyType>(myKey, value);
+
+// Read in handler
+final value = req.context.tryGet<MyType>(myKey);
+```
+
+## Middleware
+
+### Typedefs
+```dart
+typedef Future<Request> RequestMiddleware(Request req);
+typedef Future<Response> ResponseMiddleware(Response res);
+```
+
+### Registration
+```dart
+router.onRequest(myMiddleware());                            // sync, all routes
+router.onRequest(myMiddleware(), runAsync: true);             // async (concurrent)
+router.onRequest(myMiddleware(), useAlways: true);            // runs even if cancelled
+router.onResponse(myResponseMiddleware());
+
+// Per-route
+router.post('/upload', handler)
+  ..addOnRequest(readMultipartContent());
+```
+
+### Built-in Middleware
+```dart
+readJsonContent()                        // parses JSON body → req.content
+readMultipartContent([MultipartConfig])  // parses multipart → MultipartFormData.of(req)
+enforceJsonContentType()                 // validates Content-Type by HTTP method
+CorsMiddleware(Cors(...))                // CORS headers + preflight
+securityHeaders([SecurityHeadersConfig]) // Helmet-style security headers
+rateLimit([RateLimitConfig])             // IP-based fixed-window rate limiting
+loggerIn()                               // request logger (start)
+loggerOut()                              // response logger (end)
+```
+
+### Writing Custom Middleware
+```dart
+RequestMiddleware requireAuth() {
+  return (Request req) async {
+    final token = req.headers.value('authorization');
+    if (token == null) {
+      req.cancel();
+      return req.respond.unauthorized(msg: 'Auth required');
+    }
+    return req;
+  };
+}
+```
+
+## HttpException (throw from handlers/middleware)
+```dart
+throw BadRequestException('Invalid input', {'field': 'reason'});
+throw UnauthorizedException();
+throw ForbiddenException();
+throw NotFoundException('User not found');
+throw ConflictException();
+throw TooManyRequestsException();
+throw InternalServerException();
+// Auto-caught by router → standard error JSON response
+```
+
+## File Uploads
+```dart
+router.onRequest(readMultipartContent(MultipartConfig(
+  maxFileSize: 5 * 1024 * 1024,      // per file, default 10MB
+  maxTotalSize: 50 * 1024 * 1024,     // all files, default 50MB
+  maxFiles: 10,                        // default 10
+  allowedMimeTypes: ['image/png'],     // empty = all
+)));
+
+// In handler:
+final form = MultipartFormData.of(req)!;
+form.field('name')                     // String?
+form.file('avatar')                    // UploadedFile? (.fieldName, .filename, .contentType, .bytes, .size)
+form.filesFor('photos')                // List<UploadedFile>
+```
+
+## Static Files
+```dart
+router.serveStaticFiles('/public', 'web/public', StaticFilesConfig(
+  index: 'index.html',   // default
+  maxAge: 3600,           // seconds, default
+  etag: true,             // default
+  headers: {},            // extra headers
+));
+```
+
+## Gotchas
+- `req.content` is null until `readJsonContent()` middleware runs
+- `cancel()` stops the pipeline — middleware with `useAlways: true` still runs
+- Response is JSON-only (no HTML/template rendering)
+- Context keys must be created via `Context.makeKey()` (UUID strings)
+- Middleware execution order: sync request → async request → handler → async response → sync response
+- SDK constraint: `>=2.12.0 <4.0.0` — no Dart 3 records/patterns syntax

@@ -106,8 +106,8 @@ Arrow provides convenient response methods:
 
 ```dart
 // Success responses
-req.respond.ok(data: {'user': 'Alice'});           // 200 OK (GET)
-req.respond.ok(data: {'id': 123});                 // 201 Created (POST)
+req.respond.ok(data: {'user': 'Alice'});           // 200 OK
+req.respond.created(data: {'id': 123});            // 201 Created
 req.respond.code(204);                             // 204 No Content
 
 // Error responses

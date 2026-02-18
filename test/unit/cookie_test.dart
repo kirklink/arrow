@@ -358,5 +358,75 @@ void main() {
         await cleanupMockRequest(httpReq);
       });
     });
+
+    group('chaining', () {
+      test('setCookie should return the Responder instance', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+
+        final result = req.respond.setCookie('session', 'abc123');
+        expect(identical(result, req.respond), isTrue);
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should allow chaining setCookie then ok', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+
+        final response =
+            req.respond.setCookie('session', 'abc123').ok(data: {'test': true});
+        expect(response, isNotNull);
+        expect(req.innerRequest.response.cookies.length, equals(1));
+        expect(req.innerRequest.response.cookies[0].name, equals('session'));
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should allow chaining clearCookie then ok', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+
+        final response = req.respond
+            .clearCookie('session', path: '/')
+            .ok(data: {'loggedOut': true});
+        expect(response, isNotNull);
+        expect(req.innerRequest.response.cookies.length, equals(1));
+        expect(req.innerRequest.response.cookies[0].value, equals(''));
+        expect(req.innerRequest.response.cookies[0].maxAge, equals(0));
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should allow chaining multiple setCookie calls then ok', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+
+        final response = req.respond
+            .setCookie('session', 'abc')
+            .setCookie('theme', 'dark')
+            .ok(data: {'test': true});
+        expect(response, isNotNull);
+        expect(req.innerRequest.response.cookies.length, equals(2));
+        expect(req.innerRequest.response.cookies[0].name, equals('session'));
+        expect(req.innerRequest.response.cookies[1].name, equals('theme'));
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should allow chaining setCookie then error response', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+
+        final response = req.respond
+            .setCookie('audit', 'failed-login')
+            .badRequest(msg: 'Invalid credentials');
+        expect(response, isNotNull);
+        expect(req.innerRequest.response.cookies.length, equals(1));
+        expect(req.innerRequest.response.cookies[0].name, equals('audit'));
+
+        await cleanupMockRequest(httpReq);
+      });
+    });
   });
 }

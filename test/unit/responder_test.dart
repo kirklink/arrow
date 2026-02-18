@@ -38,14 +38,14 @@ void main() {
         await cleanupMockRequest(httpReq);
       });
 
-      test('should set status code to 201 for POST requests', () async {
+      test('should set status code to 200 for POST requests', () async {
         final httpReq = await createMockPostRequest();
         final req = Request(httpReq);
         final responder = Responder(req);
 
         responder.ok(data: {'id': 123});
 
-        expect(req.innerRequest.response.statusCode, equals(io.HttpStatus.created));
+        expect(req.innerRequest.response.statusCode, equals(io.HttpStatus.ok));
 
         await cleanupMockRequest(httpReq);
       });
@@ -85,6 +85,63 @@ void main() {
 
         expect(
           () => responder.ok(data: {'second': 'response'}),
+          throwsA(isA<ArrowException>()),
+        );
+
+        await cleanupMockRequest(httpReq);
+      });
+    });
+
+    group('created()', () {
+      test('should create 201 response with data', () async {
+        final httpReq = await createMockPostRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.created(data: {'id': 42, 'name': 'Alice'});
+
+        expect(req.innerRequest.response.statusCode,
+            equals(io.HttpStatus.created));
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should always return 201 regardless of HTTP method', () async {
+        final httpReq = await createMockHttpRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.created(data: {'id': 1});
+
+        expect(req.innerRequest.response.statusCode,
+            equals(io.HttpStatus.created));
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should write JSON response with ok:true', () async {
+        final httpReq = await createMockPostRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.created(data: {'id': 1});
+
+        expect(
+            () => json.encode({"ok": true, "data": {'id': 1}}),
+            returnsNormally);
+
+        await cleanupMockRequest(httpReq);
+      });
+
+      test('should throw if response already set', () async {
+        final httpReq = await createMockPostRequest();
+        final req = Request(httpReq);
+        final responder = Responder(req);
+
+        responder.created(data: {'id': 1});
+
+        expect(
+          () => responder.created(data: {'id': 2}),
           throwsA(isA<ArrowException>()),
         );
 

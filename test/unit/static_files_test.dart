@@ -216,7 +216,7 @@ void main() {
         final postReq =
             await client.post('localhost', ts.port, '/public/data.txt');
         final postRes = await postReq.close();
-        expect(postRes.statusCode, equals(201));
+        expect(postRes.statusCode, equals(200));
       } finally {
         await ts.server.close();
       }

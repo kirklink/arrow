@@ -15,18 +15,38 @@ class Responder {
 
   Response get response => _response;
 
-  Response ok(
-      {Map<String, dynamic> data = const <String, dynamic>{},
-      bool printResponseObject = false}) {
+  /// Send a 200 OK response with optional data.
+  Response ok({Map<String, dynamic> data = const <String, dynamic>{}}) {
     if (_complete) {
       throw ArrowException('The response has already been set.');
     }
-    final code = _getSuccessCode();
     final encoded = json.encode({"ok": true, "data": data});
     final srcResponse = _request.innerRequest.response;
     srcResponse.headers.set(
         io.HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
-    srcResponse.statusCode = code;
+    srcResponse.statusCode = io.HttpStatus.ok;
+    srcResponse.write(encoded);
+    _complete = true;
+    _response = Response(_request, data: data);
+    return _response;
+  }
+
+  /// Send a 201 Created response with optional data.
+  ///
+  /// Use this for POST handlers that create new resources:
+  ///
+  /// ```dart
+  /// return req.respond.created(data: {'id': newId, 'name': 'Alice'});
+  /// ```
+  Response created({Map<String, dynamic> data = const <String, dynamic>{}}) {
+    if (_complete) {
+      throw ArrowException('The response has already been set.');
+    }
+    final encoded = json.encode({"ok": true, "data": data});
+    final srcResponse = _request.innerRequest.response;
+    srcResponse.headers.set(
+        io.HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
+    srcResponse.statusCode = io.HttpStatus.created;
     srcResponse.write(encoded);
     _complete = true;
     _response = Response(_request, data: data);
@@ -175,23 +195,17 @@ class Responder {
     return _response;
   }
 
-  /// Set a cookie on the response.
+  /// Set a cookie on the response. Returns this [Responder] for chaining.
   ///
-  /// Must be called before any terminal response method ([ok], [badRequest],
-  /// etc.) since those finalize the response. Cookies are serialized to
-  /// Set-Cookie headers automatically by dart:io.
+  /// Cookies are serialized to Set-Cookie headers automatically by dart:io.
+  /// Chain with a terminal response method for clean, readable code:
   ///
   /// ```dart
-  /// req.respond.setCookie('session', 'abc123',
-  ///   httpOnly: true,
-  ///   secure: true,
-  ///   maxAge: Duration(hours: 24),
-  ///   path: '/',
-  ///   sameSite: SameSite.strict,
-  /// );
-  /// return req.respond.ok(data: {'loggedIn': true});
+  /// return req.respond
+  ///     .setCookie('session', 'abc123', httpOnly: true, secure: true)
+  ///     .ok(data: {'loggedIn': true});
   /// ```
-  void setCookie(
+  Responder setCookie(
     String name,
     String value, {
     Duration? maxAge,
@@ -214,19 +228,20 @@ class Responder {
     cookie.secure = secure;
     if (sameSite != null) cookie.sameSite = sameSite;
     _request.innerRequest.response.cookies.add(cookie);
+    return this;
   }
 
   /// Clear a cookie by setting it with an empty value and maxAge of 0.
+  /// Returns this [Responder] for chaining.
   ///
   /// The [path] and [domain] must match the original cookie for the
   /// browser to recognize which cookie to delete.
   ///
   /// ```dart
-  /// req.respond.clearCookie('session', path: '/');
-  /// return req.respond.ok(data: {'loggedOut': true});
+  /// return req.respond.clearCookie('session', path: '/').ok(data: {'loggedOut': true});
   /// ```
-  void clearCookie(String name, {String? path, String? domain}) {
-    setCookie(name, '', maxAge: Duration.zero, path: path, domain: domain);
+  Responder clearCookie(String name, {String? path, String? domain}) {
+    return setCookie(name, '', maxAge: Duration.zero, path: path, domain: domain);
   }
 
   Request _errorResponse(
@@ -249,15 +264,6 @@ class Responder {
   //   return _response;
   // }
 
-  int _getSuccessCode() {
-    if (_request.method == 'POST') {
-      return io.HttpStatus.created;
-    } else if (_request.method == 'DELETE') {
-      return io.HttpStatus.ok;
-    } else {
-      return io.HttpStatus.ok;
-    }
-  }
 
   // void _onlyOnce() {
   //   if (_responseObject != null) {

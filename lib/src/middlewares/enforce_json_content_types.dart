@@ -1,8 +1,21 @@
 import 'dart:io';
 
 import 'package:arrow/src/request.dart';
+import 'package:arrow/src/request_middleware.dart';
 
-Future<Request> enforceJsonContentType(Request req) async {
+/// Middleware that validates Content-Type headers by HTTP method.
+///
+/// - GET/DELETE must not have a Content-Type header.
+/// - POST/PUT must have `application/json` Content-Type.
+///
+/// ```dart
+/// router.onRequest(enforceJsonContentType());
+/// ```
+RequestMiddleware enforceJsonContentType() {
+  return _enforceJsonContentType;
+}
+
+Future<Request> _enforceJsonContentType(Request req) async {
   ContentType? contentType = req.innerRequest.headers.contentType;
   if (req.method == 'GET' || req.method == 'DELETE') {
     if (contentType != null) {
@@ -11,7 +24,6 @@ Future<Request> enforceJsonContentType(Request req) async {
       req.respond.badRequest();
       return req;
     }
-    ;
   }
   if (req.method == 'POST' || req.method == 'PUT') {
     if (contentType == null || contentType.mimeType != 'application/json') {
