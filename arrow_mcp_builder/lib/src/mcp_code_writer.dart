@@ -68,6 +68,10 @@ class McpCodeWriter {
       buf.writeln('// Description: $serverDescription');
     }
     buf.writeln();
+    buf.writeln("import 'dart:convert' show json;");
+    buf.writeln();
+    buf.writeln("import 'package:http/http.dart' as http;");
+    buf.writeln();
     buf.writeln("import 'package:arrow/mcp.dart';");
     buf.writeln();
   }
@@ -139,12 +143,18 @@ class McpCodeWriter {
     final className = '${classPrefix}McpDispatcher';
     final listName = '${ReCase(serverName).camelCase}Tools';
 
-    buf.writeln('/// Generated dispatcher for $serverName MCP tools.');
+    buf.writeln('/// Generated HTTP proxy dispatcher for $serverName MCP tools.');
     buf.writeln('///');
-    buf.writeln('/// The [dispatch] method provides a stub dispatch-by-name switch.');
-    buf.writeln(
-        '/// The HTTP transport layer is intentionally left as an extension point.');
+    buf.writeln('/// Each tool call is proxied as an HTTP request to the Arrow server');
+    buf.writeln('/// at [baseUrl]. Pass an optional [http.Client] for testing or');
+    buf.writeln('/// connection reuse.');
     buf.writeln('class $className extends McpDispatcher {');
+    buf.writeln('  final String baseUrl;');
+    buf.writeln('  final http.Client _client;');
+    buf.writeln();
+    buf.writeln('  $className(this.baseUrl, {http.Client? client})');
+    buf.writeln('      : _client = client ?? http.Client();');
+    buf.writeln();
     buf.writeln('  @override');
     buf.writeln(
         '  List<McpToolDefinition> get tools => $listName;');
@@ -164,22 +174,74 @@ class McpCodeWriter {
     buf.writeln('    }');
     buf.writeln('  }');
 
-    // Stub handler methods.
+    // HTTP proxy handler methods.
     for (final tool in _tools) {
       buf.writeln();
-      buf.writeln(
-          '  /// Stub for ${tool.method} ${tool.path} — wire HTTP transport or direct handler.');
-      buf.writeln(
-          '  Future<McpToolResult> _handle${ReCase(tool.fieldName).pascalCase}(Map<String, dynamic> args) async {');
-      buf.writeln('    return McpToolResult.text(');
-      buf.writeln(
-          "      'Not implemented: ${tool.method} ${tool.path}',");
-      buf.writeln('      isError: true,');
-      buf.writeln('    );');
-      buf.writeln('  }');
+      _writeHandlerMethod(buf, tool);
     }
 
     buf.writeln('}');
+  }
+
+  void _writeHandlerMethod(StringBuffer buf, _ToolInfo tool) {
+    final methodName =
+        '_handle${ReCase(tool.fieldName).pascalCase}';
+    final httpMethod = tool.method.toUpperCase();
+
+    buf.writeln(
+        '  Future<McpToolResult> $methodName(Map<String, dynamic> args) async {');
+
+    // Build the URL with path param interpolation.
+    var urlExpr = tool.path;
+    for (final p in tool.pathParams) {
+      urlExpr = urlExpr.replaceAll('{$p}', "\${Uri.encodeComponent(args['$p'].toString())}");
+    }
+    buf.writeln("    final url = Uri.parse('\$baseUrl$urlExpr');");
+
+    // Generate the HTTP call based on method.
+    if (httpMethod == 'GET' || httpMethod == 'HEAD') {
+      buf.writeln('    final response = await _client.get(url);');
+    } else if (httpMethod == 'DELETE') {
+      buf.writeln('    final response = await _client.delete(url);');
+    } else {
+      // POST, PUT, PATCH — send non-path params as JSON body.
+      buf.writeln('    final body = <String, dynamic>{};');
+      buf.writeln('    for (final entry in args.entries) {');
+      if (tool.pathParams.isNotEmpty) {
+        final pathParamSet =
+            tool.pathParams.map((p) => "'$p'").join(', ');
+        buf.writeln(
+            '      if (!const {$pathParamSet}.contains(entry.key)) {');
+        buf.writeln('        body[entry.key] = entry.value;');
+        buf.writeln('      }');
+      } else {
+        buf.writeln('      body[entry.key] = entry.value;');
+      }
+      buf.writeln('    }');
+
+      if (httpMethod == 'POST') {
+        buf.writeln("    final response = await _client.post(url,");
+      } else if (httpMethod == 'PUT') {
+        buf.writeln("    final response = await _client.put(url,");
+      } else {
+        buf.writeln("    final response = await _client.patch(url,");
+      }
+      buf.writeln(
+          "        headers: {'Content-Type': 'application/json'},");
+      buf.writeln('        body: json.encode(body));');
+    }
+
+    // Handle the response.
+    buf.writeln(
+        '    if (response.statusCode >= 200 && response.statusCode < 300) {');
+    buf.writeln('      return McpToolResult.text(response.body);');
+    buf.writeln('    } else {');
+    buf.writeln('      return McpToolResult.text(');
+    buf.writeln(
+        "          'HTTP \${response.statusCode}: \${response.body}',");
+    buf.writeln('          isError: true);');
+    buf.writeln('    }');
+    buf.writeln('  }');
   }
 
   String _escape(String s) => s.replaceAll("'", "\\'");

@@ -3,7 +3,7 @@ import 'package:arrow_mcp_builder/src/mcp_code_writer.dart';
 
 void main() {
   group('McpCodeWriter', () {
-    test('generates header with server info', () {
+    test('generates header with server info and http imports', () {
       final writer = McpCodeWriter(
         serverName: 'test-api',
         serverDescription: 'Test API',
@@ -13,6 +13,8 @@ void main() {
       expect(output, contains('GENERATED CODE - DO NOT MODIFY BY HAND'));
       expect(output, contains('test-api'));
       expect(output, contains('Test API'));
+      expect(output, contains("import 'dart:convert' show json;"));
+      expect(output, contains("import 'package:http/http.dart' as http;"));
       expect(output, contains("import 'package:arrow/mcp.dart'"));
     });
 
@@ -139,13 +141,112 @@ void main() {
       expect(output, contains("It\\'s a test"));
     });
 
-    test('dispatcher extends McpDispatcher', () {
+    test('dispatcher extends McpDispatcher with baseUrl and http.Client', () {
       final writer = McpCodeWriter(
         serverName: 'my-api',
         serverVersion: '1.0.0',
       );
       final output = writer.build();
       expect(output, contains('extends McpDispatcher'));
+      expect(output, contains('final String baseUrl;'));
+      expect(output, contains('final http.Client _client;'));
+      expect(output, contains('MyApiMcpDispatcher(this.baseUrl'));
+      expect(output, contains('{http.Client? client}'));
+    });
+
+    test('GET handler generates http.get call', () {
+      final writer = McpCodeWriter(
+        serverName: 'my-api',
+        serverVersion: '1.0.0',
+      );
+      writer.addTool(
+        fieldName: 'getUsers',
+        description: 'Get users',
+        method: 'GET',
+        path: '/users',
+        pathParams: [],
+        parameters: {},
+      );
+      final output = writer.build();
+      expect(output, contains('_client.get(url)'));
+      expect(output, contains('McpToolResult.text(response.body)'));
+      expect(output, contains('response.statusCode >= 200'));
+    });
+
+    test('POST handler generates http.post with JSON body', () {
+      final writer = McpCodeWriter(
+        serverName: 'my-api',
+        serverVersion: '1.0.0',
+      );
+      writer.addTool(
+        fieldName: 'createUser',
+        description: 'Create user',
+        method: 'POST',
+        path: '/users',
+        pathParams: [],
+        parameters: {'name': 'User name'},
+      );
+      final output = writer.build();
+      expect(output, contains('_client.post(url,'));
+      expect(output, contains("'Content-Type': 'application/json'"));
+      expect(output, contains('json.encode(body)'));
+    });
+
+    test('DELETE handler generates http.delete call', () {
+      final writer = McpCodeWriter(
+        serverName: 'my-api',
+        serverVersion: '1.0.0',
+      );
+      writer.addTool(
+        fieldName: 'deleteUser',
+        description: 'Delete user',
+        method: 'DELETE',
+        path: '/users/{id}',
+        pathParams: ['id'],
+        parameters: {'id': 'User ID'},
+      );
+      final output = writer.build();
+      expect(output, contains('_client.delete(url)'));
+      expect(output, contains('Uri.encodeComponent'));
+    });
+
+    test('PUT handler generates http.put with JSON body excluding path params',
+        () {
+      final writer = McpCodeWriter(
+        serverName: 'my-api',
+        serverVersion: '1.0.0',
+      );
+      writer.addTool(
+        fieldName: 'updateUser',
+        description: 'Update user',
+        method: 'PUT',
+        path: '/users/{id}',
+        pathParams: ['id'],
+        parameters: {'id': 'User ID', 'name': 'Updated name'},
+      );
+      final output = writer.build();
+      expect(output, contains('_client.put(url,'));
+      expect(output, contains("'id'"));
+      // Path params should be excluded from body
+      expect(output, contains('.contains(entry.key)'));
+    });
+
+    test('error response includes status code', () {
+      final writer = McpCodeWriter(
+        serverName: 'my-api',
+        serverVersion: '1.0.0',
+      );
+      writer.addTool(
+        fieldName: 'getStuff',
+        description: 'Get stuff',
+        method: 'GET',
+        path: '/stuff',
+        pathParams: [],
+        parameters: {},
+      );
+      final output = writer.build();
+      expect(output, contains('response.statusCode'));
+      expect(output, contains('isError: true'));
     });
   });
 }
