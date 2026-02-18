@@ -220,7 +220,7 @@ router.post('/upload', handler)
 readJsonContent()                        // parses JSON body → req.content
 readMultipartContent([MultipartConfig])  // parses multipart → MultipartFormData.of(req)
 enforceJsonContentType()                 // validates Content-Type by HTTP method
-CorsMiddleware(Cors(...))                // CORS headers + preflight
+cors(CorsConfig(...))                    // CORS headers + preflight
 securityHeaders([SecurityHeadersConfig]) // Helmet-style security headers
 rateLimit([RateLimitConfig])             // IP-based fixed-window rate limiting
 requestId()                              // X-Request-ID correlation (generates or echoes)

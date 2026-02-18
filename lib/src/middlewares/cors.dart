@@ -4,7 +4,7 @@ import 'package:recase/recase.dart' as recase;
 import 'package:arrow/src/request.dart';
 import 'package:arrow/src/request_middleware.dart';
 
-class Cors {
+class CorsConfig {
   final _defaultHeaders = const [
     'Origin',
     'Accept',
@@ -22,7 +22,7 @@ class Cors {
   final bool allowCredentials;
   final List<String> exposedHeaders;
 
-  Cors(
+  CorsConfig(
       {List<String> allowedOrigins = const [],
       List<String> allowedHeaders = const [],
       List<String> allowedMethods = const [],
@@ -102,7 +102,7 @@ class Cors {
   }
 }
 
-Request handlePreFlight(Request req, Cors cors) {
+Request handlePreFlight(Request req, CorsConfig cors) {
   if (req.method != 'OPTIONS') {
     req.messenger
         .addError(('[cors] Preflight aborted. ${req.method}!="OPTIONS'));
@@ -172,7 +172,7 @@ Request handlePreFlight(Request req, Cors cors) {
   return req;
 }
 
-Request handleActualRequest(Request req, Cors cors) {
+Request handleActualRequest(Request req, CorsConfig cors) {
   req.innerRequest.response.headers.add(HttpHeaders.varyHeader, 'Origin');
 
   final origin = Uri.tryParse(req.headers.value('Origin') ?? '');
@@ -212,7 +212,7 @@ Request handleActualRequest(Request req, Cors cors) {
   return req;
 }
 
-RequestMiddleware CorsMiddleware(Cors config) {
+RequestMiddleware cors(CorsConfig config) {
   return (Request req) async {
     if (req.method == 'OPTIONS') {
       return handlePreFlight(req, config);
