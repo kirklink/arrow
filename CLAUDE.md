@@ -6,9 +6,9 @@ This file contains instructions and context for Claude Code when working on the 
 
 Arrow is an opinionated, Express-inspired Dart server framework for rapid REST API development. It's designed for the 80-90% use case where you need a standard JSON REST API with minimal boilerplate.
 
-**Current Status**: Architecture cleanup complete. ~85-90% feature-complete compared to modern frameworks (Express, Hono, Gin, Echo). 327 passing tests.
+**Current Status**: Architecture cleanup and MCP code generation complete. ~90-95% feature-complete compared to modern frameworks (Express, Hono, Gin, Echo). 351 passing tests in arrow, 14 in arrow_mcp_builder, 145 in arrow_example.
 
-**Active Development**: Following a 12-week modernization plan. See `docs/modernization-plan.md` for details.
+**Active Development**: Following a modernization plan. See `docs/modernization-plan.md` for details.
 
 ## Repository Structure
 
@@ -16,6 +16,7 @@ This is a git submodule within the `dart` monorepo workspace:
 - Parent repo: `dart` (wrapper/workspace for Dart packages)
 - This repo: `arrow` (the core framework)
 - Sibling: `arrow_example` (example applications)
+- `arrow_mcp_builder/` — MCP code generation package (source_gen/build_runner)
 
 ## Branch Strategy
 
@@ -33,7 +34,6 @@ This is a git submodule within the `dart` monorepo workspace:
 4. Merge `dev` → `main` periodically for stable releases
 
 **Parked Branches** (future consideration):
-- `parked/mcp-generator` - MCP server generation package
 - `parked/openapi-codegen` - OpenAPI spec → Dart code generation
 - `parked/openapi-spec-generator` - Dart code → OpenAPI spec generation
 
@@ -46,10 +46,52 @@ This is a git submodule within the `dart` monorepo workspace:
 
 ## Key Files
 
-- `docs/modernization-plan.md` - 12-week plan for bringing Arrow to feature parity
+- `docs/modernization-plan.md` - Modernization plan and progress tracking
 - `docs/assessment.md` - Framework assessment and current state
 - `docs/http-server-testing-solution.md` - Testing infrastructure notes
 - `README.md` - Main project documentation
+
+## MCP Code Generation
+
+Arrow includes annotation-driven MCP (Model Context Protocol) server code generation.
+
+**Architecture:**
+- Runtime types + annotations: `lib/src/mcp/` (shipped with arrow, zero extra deps)
+- Code generator: `arrow_mcp_builder/` (separate package, depends on source_gen/build/analyzer)
+- Barrel export: `lib/mcp.dart`
+
+**Key types:**
+- `@McpServer` / `@McpTool` — annotations for MCP tool definitions
+- `McpToolDefinition` — tool name, description, inputSchema, method, path
+- `McpDispatcher` — abstract interface for generated dispatchers
+- `McpToolRegistry` — mutable registry merging static (codegen) + dynamic tools
+
+**Generated output:**
+- `LibraryBuilder` produces standalone `.mcp.dart` files (not part files)
+- Generated dispatcher makes real HTTP proxy calls to the Arrow server
+- Supports GET, POST, PUT, PATCH, DELETE with path param interpolation
+- Injectable `http.Client` for testing via MockClient
+
+**Usage in consuming projects:**
+```yaml
+# pubspec.yaml
+dev_dependencies:
+  arrow_mcp_builder:
+    path: ../arrow/arrow_mcp_builder
+  build_runner: ^2.0.2
+```
+```yaml
+# build.yaml
+targets:
+  $default:
+    builders:
+      arrow_mcp_builder|mcp_server:
+        generate_for:
+          - lib/**_mcp.dart
+```
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
 
 ## Git Workflow Notes
 
@@ -61,6 +103,7 @@ This is a git submodule within the `dart` monorepo workspace:
 ## Testing
 
 - Run tests: `dart test` (uses `dart_test.yaml` with `concurrency: 1`)
+- Run MCP builder tests: `cd arrow_mcp_builder && dart test`
 - Write tests alongside each feature
 - Test helpers in `test/test_helpers.dart` — uses real HTTP round-trips via `createMockHttpRequest`
 - Target: >80% code coverage
@@ -73,7 +116,6 @@ These are intentionally excluded from core framework:
 - ORM/query builders (user choice)
 - GraphQL support (separate package)
 - OpenAPI generation (separate `arrow_openapi` package)
-- MCP server generation (separate `arrow_mcp_generator` package)
 
 ---
 
@@ -101,6 +143,7 @@ void main() {
     port: 8080,
     printRoutes: true,
     requestTimeout: Duration(seconds: 30), // optional, no timeout by default
+    shutdownTimeout: Duration(seconds: 30), // graceful shutdown drain period
   );
 }
 
@@ -278,6 +321,37 @@ router.serveStaticFiles('/public', 'web/public', StaticFilesConfig(
   etag: true,             // default
   headers: {},            // extra headers
 ));
+```
+
+## MCP Code Generation
+```dart
+// lib/user_service_mcp.dart
+import 'package:arrow/mcp.dart';
+
+@McpServer('user-api', description: 'User management API')
+class UserServiceMcp {
+  @McpTool(
+    description: 'Get all users',
+    method: 'GET',
+    path: '/users',
+  )
+  final getUsers = null;
+
+  @McpTool(
+    description: 'Get user by ID',
+    method: 'GET',
+    path: '/users/{id}',
+    parameters: {'id': 'The unique user identifier'},
+  )
+  final getUser = null;
+}
+
+// Generated: lib/user_service_mcp.mcp.dart
+// Usage:
+final dispatcher = UserApiMcpDispatcher('http://localhost:8080');
+final result = await dispatcher.dispatch(
+  McpRequest(toolName: 'getUser', arguments: {'id': '42'}),
+);
 ```
 
 ## Gotchas

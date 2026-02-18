@@ -121,6 +121,10 @@ req.respond.serverError();                         // 500
 // File responses
 await req.respond.sendFile(File('uploads/photo.png'));
 
+// Cookie responses (chainable)
+req.respond.setCookie('token', 'abc', httpOnly: true).ok(data: {...});
+req.respond.clearCookie('token').ok(data: {...});
+
 // Custom responses
 req.respond.raw(418, {'message': "I'm a teapot"});
 req.respond.error(422, msg: 'Unprocessable');
@@ -136,25 +140,27 @@ import 'package:arrow/middlewares.dart';
 final router = Router();
 
 // Add middleware to all routes
-router.use(cors());
-router.use(logger());
+router.onRequest(cors(CorsConfig()));
+router.onRequest(loggerIn());
+router.onResponse(loggerOut());
 
 // Middleware for specific route groups
 final apiRouter = router.group('/api');
-apiRouter.use(requireAuth());
+apiRouter.onRequest(readJsonContent());
+apiRouter.onRequest(requireAuth());
 apiRouter.get('/users', getUsers);
 ```
 
 #### Built-in Middleware
 
-- **cors()** - Cross-Origin Resource Sharing
-- **logger()** - Request logging
 - **readJsonContent()** - Parse JSON request bodies
 - **readMultipartContent()** - Parse multipart/form-data file uploads
 - **enforceJsonContentType()** - Require `Content-Type: application/json`
+- **cors()** - Cross-Origin Resource Sharing
 - **securityHeaders()** - Helmet-style security response headers (CSP, HSTS, etc.)
 - **rateLimit()** - IP-based rate limiting with configurable windows
 - **requestId()** - `X-Request-ID` correlation (generates UUID or echoes client header)
+- **loggerIn()** / **loggerOut()** - Request/response logging
 
 #### Static File Serving
 
@@ -215,7 +221,7 @@ RequestMiddleware authMiddleware() {
     }
 
     final user = await validateToken(token);
-    req.context.setOrReplace('user', user);
+    req.context.setOrReplace(userKey, user);
 
     return req;
   };
@@ -235,20 +241,22 @@ ResponseMiddleware timingMiddleware() {
 Share data between middleware and handlers using the request context:
 
 ```dart
+// Define a key (top-level, once)
+final userKey = Context.makeKey();
+
 // In middleware
 RequestMiddleware loadUser() {
   return (Request req) async {
     final userId = req.params.get('userId');
     final user = await database.findUser(userId);
-
-    req.context.setOrReplace('user', user);
+    req.context.setOrReplace<User>(userKey, user);
     return req;
   };
 }
 
 // In handler
 Response getProfile(Request req) {
-  final user = req.context.tryGet<User>('user');
+  final user = req.context.tryGet<User>(userKey);
 
   if (user == null) {
     return req.respond.notFound(msg: 'User not found');
@@ -267,14 +275,14 @@ final router = Router();
 
 // API v1 routes
 final v1 = router.group('/api/v1');
-v1.use(apiKeyAuth());
+v1.onRequest(apiKeyAuth());
 
 v1.get('/users', getAllUsers);
 v1.post('/users', createUser);
 
 // Admin routes with additional auth
 final admin = v1.group('/admin');
-admin.use(requireAdmin());
+admin.onRequest(requireAdmin());
 admin.get('/stats', getStats);
 admin.delete('/users/{id}', deleteUser);
 ```
@@ -335,6 +343,77 @@ void main() async {
 
 The cascade operator (`..`) calls methods on the same object and returns the object, making it perfect for configuring routers in a clean, chainable style.
 
+## Production Features
+
+### Request Timeouts
+
+Prevent hanging requests with a configurable global timeout:
+
+```dart
+await app.run(routerConfig,
+  port: 8080,
+  requestTimeout: Duration(seconds: 30),
+);
+```
+
+When a request exceeds the timeout, Arrow responds with a 408 status and standard JSON error envelope.
+
+### Graceful Shutdown
+
+Arrow handles SIGINT and SIGTERM signals automatically:
+
+```dart
+await app.run(routerConfig,
+  port: 8080,
+  shutdownTimeout: Duration(seconds: 30), // drain period for in-flight requests
+);
+```
+
+During shutdown:
+1. New requests receive 503 Service Unavailable
+2. In-flight requests are allowed to complete within the shutdown timeout
+3. Server closes cleanly after all requests drain (or timeout expires)
+
+### Request ID Correlation
+
+Track requests across services with `X-Request-ID`:
+
+```dart
+router.onRequest(requestId());
+```
+
+Generates a UUID v4 for each request, or echoes the client-provided `X-Request-ID` header. The ID is stored in the request context and set on the response.
+
+## MCP Code Generation
+
+Arrow includes annotation-driven MCP (Model Context Protocol) server code generation. Write the Arrow endpoint, get the MCP tooling for free.
+
+```dart
+// lib/user_service_mcp.dart
+import 'package:arrow/mcp.dart';
+
+@McpServer('user-api', description: 'User management API')
+class UserServiceMcp {
+  @McpTool(description: 'Get all users', method: 'GET', path: '/users')
+  final getUsers = null;
+
+  @McpTool(
+    description: 'Get user by ID',
+    method: 'GET',
+    path: '/users/{id}',
+    parameters: {'id': 'The unique user identifier'},
+  )
+  final getUser = null;
+}
+```
+
+Run `dart run build_runner build` to generate a `.mcp.dart` file with:
+- Const `McpToolDefinition` for each annotated tool
+- A typed tool list for static registration
+- An `McpDispatcher` subclass that proxies MCP tool calls as HTTP requests to your Arrow server
+
+See [arrow_mcp_builder/](arrow_mcp_builder/) for setup instructions.
+
 ## Response Format
 
 Arrow uses a consistent JSON response format:
@@ -374,16 +453,18 @@ void main() async {
     final router = Router();
 
     // Global middleware
-    router.use(cors());
-    router.use(logger());
+    router.onRequest(requestId());
+    router.onRequest(cors(CorsConfig()));
+    router.onRequest(loggerIn(), useAlways: true);
+    router.onResponse(loggerOut(), useAlways: true);
 
     // Public routes
     router.get('/health', healthCheck);
 
     // API routes with auth
     final api = router.group('/api');
-    api.use(readJsonContent());
-    api.use(requireAuth());
+    api.onRequest(readJsonContent());
+    api.onRequest(requireAuth());
 
     // User routes
     api.get('/users', getAllUsers);
@@ -398,7 +479,11 @@ void main() async {
     });
 
     return router;
-  }, port: 8080, printRoutes: true);
+  },
+    port: 8080,
+    printRoutes: true,
+    requestTimeout: Duration(seconds: 30),
+  );
 }
 
 Future<Response> healthCheck(Request req) async {
@@ -418,7 +503,7 @@ Future<Response> getUserById(Request req) async {
 
 Future<Response> createUser(Request req) async {
   // Your implementation
-  return req.respond.ok(data: {'created': true});
+  return req.respond.created(data: {'id': 1});
 }
 
 Future<Response> updateUser(Request req) async {
@@ -443,7 +528,7 @@ RequestMiddleware requireAuth() {
     }
 
     // Validate token and load user
-    // req.context.setOrReplace('user', user);
+    // req.context.setOrReplace(userKey, user);
 
     return req;
   };
@@ -485,6 +570,7 @@ await app.run(
   forceSSL: false,                             // Redirect HTTP to HTTPS
   printRoutes: true,                           // Print all routes on startup
   requestTimeout: Duration(seconds: 30),       // Global request timeout (optional)
+  shutdownTimeout: Duration(seconds: 30),      // Graceful shutdown drain period
 );
 ```
 
@@ -501,25 +587,27 @@ See [test/README.md](test/README.md) for testing documentation.
 ## Project Status
 
 **Current Version:** 0.1.0-nullsafety.0
-**Status:** Active development
+**Status:** Active development — 351 passing tests
 
-### Recently Completed
-- ✅ All HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD)
-- ✅ Query parameter helpers with type coercion
-- ✅ HttpException hierarchy for structured error handling
-- ✅ Cookie support (reading and writing)
-- ✅ Security headers middleware (Helmet-style)
-- ✅ Rate limiting middleware (fixed window, configurable)
-- ✅ Response compression (gzip via `autoCompress`)
-- ✅ Static file serving with ETag caching and MimeType detection
-- ✅ File upload support (multipart/form-data with validation)
-- ✅ 299 passing tests
+### Features
+- All HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD)
+- Path parameters and query parameter helpers with type coercion
+- HttpException hierarchy for structured error handling
+- Cookie support (reading and chainable writing)
+- Security headers middleware (Helmet-style)
+- Rate limiting middleware (fixed window, configurable)
+- Response compression (gzip via `autoCompress`)
+- Static file serving with ETag caching and MimeType detection
+- File upload support (multipart/form-data with validation)
+- Request timeouts (configurable per-server)
+- Graceful shutdown (SIGINT/SIGTERM, in-flight drain)
+- Request ID correlation (X-Request-ID)
+- MCP code generation with HTTP transport proxy
 
 ### Roadmap
-- Flexible response types
-- Streaming responses
+- Flexible response types (non-JSON)
+- Streaming responses / SSE
 - WebSocket support
-- Graceful shutdown
 
 See [docs/modernization-plan.md](docs/modernization-plan.md) for the full roadmap.
 
@@ -530,6 +618,7 @@ See [docs/modernization-plan.md](docs/modernization-plan.md) for the full roadma
 - Express-like ergonomics in Dart
 - Strong typing and null-safety
 - Minimal boilerplate for common patterns
+- AI-ready with built-in MCP code generation
 
 **Don't use Arrow if you need:**
 - Complete flexibility in response formats

@@ -2,9 +2,7 @@
 
 **Goal:** Bring Arrow to feature parity with modern web frameworks (Express, Hono, Gin, Echo)
 
-**Timeline:** 12 weeks (3 months)
-
-**Current Status:** Phase 2 complete. ~75-80% feature-complete compared to modern frameworks
+**Current Status:** Phases 1-2 complete, Phase 3 mostly complete. ~90-95% feature-complete. 351 passing tests.
 
 ---
 
@@ -38,37 +36,67 @@ Created HttpException hierarchy (BadRequest 400, Unauthorized 401, Forbidden 403
 
 ---
 
-## Phase 2: Production Features (Weeks 4-6)
+## Phase 2: Production Features ✅
 
 ### 2.1 File Upload Support ✅
 `readMultipartContent()` middleware parses multipart/form-data bodies using the `mime` package's `MimeMultipartTransformer`. `MultipartFormData` stored on `req.context` with static `MultipartFormData.of(req)` accessor. `UploadedFile` value class with `fieldName`, `filename`, `contentType`, `bytes`. `MultipartConfig` with `maxFileSize` (10MB default), `maxTotalSize` (50MB), `maxFiles` (10), `allowedMimeTypes` (empty = all). In-memory buffering via `BytesBuilder`. Pass-through for non-multipart requests. 28 tests.
 
----
-
 ### 2.2 Static File Serving ✅
 `Router.serveStaticFiles()` method checked before route matching in `_serve()`. `StaticFilesConfig` with `index` (default `index.html`), `maxAge`, `etag`, custom `headers`. `MimeType` class with 30+ type-safe static constants and `fromPath()` lookup. `Responder.sendFile()` for streaming file responses (reusable by any handler). ETag via `"mtime-size"` with `If-None-Match` → 304. Cache-Control headers. Path traversal protection (canonical path verification). GET and HEAD support. 29 tests.
-
----
 
 ### 2.3 Rate Limiting ✅
 Fixed-window IP-based rate limiter. `RateLimitConfig` with `maxRequests`, `window`, `keyExtractor` (custom key function for API-key/header-based limiting), `includeHeaders`. `RateLimitStore` abstract interface with `MemoryRateLimitStore` (lazy cleanup). Standard headers: `X-RateLimit-Limit/Remaining/Reset`, `Retry-After`. Added `TooManyRequestsException` and `Responder.tooManyRequests()`. 33 tests.
 
----
-
 ### 2.4 Security Headers ✅
 Helmet-style `securityHeaders()` middleware with `SecurityHeadersConfig` (const constructor, all fields nullable). 7 default headers: X-Content-Type-Options, X-Frame-Options, HSTS, Referrer-Policy, X-XSS-Protection, CSP, CORP. Built as `RequestMiddleware` so headers persist through HttpException error paths. Set null to disable a header. Header map built once at registration, not per-request. 11 tests.
-
----
 
 ### 2.5 Response Compression ✅
 Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter (defaults `true`). Dart's autoCompress handles Accept-Encoding negotiation and Content-Encoding headers automatically. No middleware needed — Responder writes body inline via `srcResponse.write()`, so a compression middleware would require rearchitecting. 6 tests.
 
+**Phase 2 total: 107 tests.**
+
 ---
 
-## Phase 3: Advanced Features (Weeks 7-10)
+## Architecture Cleanup ✅ (completed between Phase 2 and Phase 3)
+
+### API Simplification ✅
+- Chainable cookies: `req.respond.setCookie(...).ok(data: {...})`
+- Added `req.respond.created()` for 201 responses
+- Consistent middleware naming: all lowercase functions — `cors(CorsConfig(...))`, `rateLimit(RateLimitConfig(...))`, `securityHeaders(SecurityHeadersConfig(...))`
+- Removed legacy class-based middleware wrappers
+
+### Request Timeouts ✅
+Configurable global request timeout via `Arrow().run(..., requestTimeout: Duration(seconds: 30))`. Server-level enforcement — when a handler exceeds the timeout, responds with 408 Request Timeout and standard JSON error envelope. 4 tests.
+
+### Graceful Shutdown ✅
+SIGINT and SIGTERM signal handling with configurable drain period via `shutdownTimeout` parameter (default 30s). New requests during shutdown receive 503 Service Unavailable. In-flight requests allowed to complete within the drain window. 3 tests.
+
+### Request ID Correlation ✅
+`requestId()` middleware generates UUID v4 or echoes client-provided `X-Request-ID` header. ID stored in request context and set on response header. 7 tests.
+
+**Architecture cleanup total: 14 tests (plus existing tests updated for API changes).**
+
+---
+
+## MCP Code Generation ✅
+
+### Runtime Types ✅
+MCP annotations (`@McpServer`, `@McpTool`) and runtime types (`McpToolDefinition`, `McpRequest`, `McpToolResult`, `McpDispatcher`, `McpToolRegistry`) in `lib/src/mcp/`. Zero additional dependencies. Barrel export via `lib/mcp.dart`. 24 unit tests.
+
+### Code Generator ✅
+`arrow_mcp_builder/` package using `source_gen` / `build_runner`. `LibraryBuilder` produces standalone `.mcp.dart` files (not part files). Scans for `@McpServer` annotated classes, reads `@McpTool` from fields, auto-detects path params from `{param}` syntax. 14 unit tests.
+
+### HTTP Transport ✅
+Generated dispatcher classes make real HTTP proxy calls to the Arrow server instead of returning stubs. Supports GET, POST, PUT, PATCH, DELETE with path param interpolation via `Uri.encodeComponent`. Non-path params sent as JSON body for POST/PUT/PATCH. Injectable `http.Client` for testing. Response status checking (2xx = success, else error with status code).
+
+### E2E Validation ✅
+`arrow_example/` includes annotated MCP config class with 5 tools, generated `.mcp.dart` file, and 17 E2E tests verifying tool definitions, HTTP dispatch via MockClient, path param exclusion from body, URL encoding, and error handling.
+
+---
+
+## Phase 3: Advanced Features (remaining)
 
 ### 3.1 Flexible Response System
-**Duration:** 5 days
 **Task:** Support non-JSON responses
 
 **Implementation:**
@@ -90,7 +118,6 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 ---
 
 ### 3.2 Streaming Responses
-**Duration:** 5 days
 **Task:** Stream large responses efficiently
 
 **Implementation:**
@@ -107,7 +134,6 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 ---
 
 ### 3.3 WebSocket Support
-**Duration:** 5 days
 **Task:** Enable real-time bidirectional communication
 
 **Implementation:**
@@ -124,50 +150,16 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 
 ---
 
-### 3.4 Request Timeouts
-**Duration:** 2 days
-**Task:** Prevent hanging requests
-
-**Implementation:**
-1. Configurable timeout middleware
-2. Per-route timeout configuration
-3. Graceful timeout handling
-4. Custom timeout error responses
-5. Write timeout tests
-6. Document timeout strategies
-
-**Why:** Prevent resource exhaustion from slow requests
-
----
-
-### 3.5 Graceful Shutdown
-**Duration:** 3 days
-**Task:** Zero-downtime deployments
-
-**Implementation:**
-1. Signal handling (SIGTERM, SIGINT)
-2. In-flight request tracking
-3. Configurable drain period
-4. Health check endpoint that becomes unhealthy during shutdown
-5. Write shutdown tests
-6. Document deployment strategies
-
-**Why:** Professional production deployments
-
----
-
-## Phase 4: Polish & Examples (Weeks 11-12)
+## Phase 4: Polish & Examples
 
 ### 4.1 Comprehensive Test Suite (INTEGRATED)
 **Approach:** Tests are written alongside each feature (not as separate phase)
 
 **Additional Testing Tasks:**
-1. Fix HTTP server test timeout issue (integration tests)
-2. Set up test coverage reporting
-3. Achieve 100+ total tests across all features
-4. Performance benchmarks
-5. Load testing scenarios
-6. Document testing patterns
+1. Set up test coverage reporting
+2. Performance benchmarks
+3. Load testing scenarios
+4. Document testing patterns
 
 ---
 
@@ -185,7 +177,6 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 ---
 
 ### 4.3 Example Projects
-**Duration:** 5 days
 **Task:** Real-world usage examples
 
 **Examples to Build:**
@@ -193,7 +184,7 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 2. **Authentication API** - JWT auth, refresh tokens, password reset
 3. **File Upload Service** - Image upload with validation and storage
 4. **WebSocket Chat** - Real-time chat application
-5. **API Gateway** - Rate limiting, proxy, aggregation
+5. **MCP-Enabled API** - Arrow API with generated MCP tool definitions
 
 **Why:** Help developers learn and adopt Arrow
 
@@ -206,23 +197,25 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 - ✅ Query parameter helpers
 - ✅ Request validation framework (endorse integration)
 - ✅ Enhanced error handling (HttpException hierarchy)
-- ✅ Cookie support
+- ✅ Cookie support (reading and chainable writing)
 - ✅ Security headers (Helmet-style)
 - ✅ Rate limiting (fixed window, configurable)
 - ✅ Response compression (gzip via autoCompress)
 - ✅ File uploads (multipart/form-data with validation)
 - ✅ Static file serving (ETag, Cache-Control, MimeType, sendFile)
-- ⬜ Streaming responses
-- ⬜ WebSocket support
+- ✅ Request timeouts (configurable per-server, 408 response)
+- ✅ Graceful shutdown (SIGINT/SIGTERM, in-flight drain, 503 during shutdown)
+- ✅ Request ID correlation (X-Request-ID, UUID generation)
+- ✅ MCP code generation (annotations, runtime types, HTTP transport proxy)
 - ⬜ Flexible response types
-- ⬜ Request timeouts
-- ⬜ Graceful shutdown
+- ⬜ Streaming responses / SSE
+- ⬜ WebSocket support
 
 ### Quality Metrics
-- **Tests:** 299 passing tests (target: 250+) ✅
+- **Tests:** 351 passing tests in arrow, 14 in arrow_mcp_builder, 145 in arrow_example (target: 250+) ✅
 - **Coverage:** TBD (target: >80%)
-- **Documentation:** Dart docs on all new public APIs
-- **Examples:** arrow_example demonstrates Phase 1 features
+- **Documentation:** Dart docs on all new public APIs, CLAUDE.md API reference
+- **Examples:** arrow_example demonstrates Phases 1-2, MCP code generation
 
 ### Developer Experience
 - Clear error messages
@@ -230,6 +223,7 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 - Hot reload support
 - Easy onboarding with examples
 - Comprehensive API documentation
+- AI-ready with MCP code generation
 
 ---
 
@@ -241,100 +235,50 @@ These are intentionally excluded from this plan:
 2. **Database integrations** - Too opinionated, user choice
 3. **ORM/query builders** - User choice
 4. **GraphQL support** - Different paradigm, separate package
-5. **OpenAPI generation** - Already in separate `arrow_openapi` package
-6. **MCP server generation** - Already in separate `arrow_mcp_generator` package
+5. **OpenAPI generation** - Separate `arrow_openapi` package
 
 ---
 
 ## Dependencies & Integration
 
-### External Packages to Add
-- Validation framework (git submodule - user provided)
-- Consider: cookie signing library
-- Consider: compression libraries if not in Dart core
+### External Packages
+- `http` - HTTP client (used by generated MCP dispatchers)
+- `mime` - MIME type detection (multipart parsing)
+- `uuid` - UUID generation (request IDs)
+- `recase` - Case conversion (MCP code generation)
 
-### Integration with Existing Packages
-- `arrow_openapi` - Can annotate routes for spec generation
-- `arrow_mcp_generator` - Can annotate routes for MCP server generation
-- Both work alongside core framework
+### Companion Packages
+- `arrow_mcp_builder` - MCP code generation (source_gen/build_runner)
+- `arrow_openapi` - OpenAPI spec generation (planned)
 
 ---
 
 ## Breaking Changes
 
-### Breaking Changes Made (Phase 1)
+### Breaking Changes Made
 1. `Parameters.get()` returns `null` instead of empty string for missing params
 2. Responder error methods accept `Map<String, Object>` instead of `Map<String, String>`
-
-### Anticipated Breaking Changes (Phases 2-4)
-1. Response format flexibility (optional breaking change)
-2. Additional error handling changes possible
+3. Middleware renamed: `CorsMiddleware(Cors(...))` → `cors(CorsConfig(...))`
 
 ### Migration Strategy
 1. Document all breaking changes clearly
 2. Provide migration examples
 3. Consider deprecation period for major changes
-4. Version bump to 0.2.0 after Phase 1
-
----
-
-## Development Workflow
-
-### For Each Feature:
-1. **Design** - Review API, check existing code
-2. **Implement** - Write feature code with Dart docs
-3. **Test** - Write comprehensive tests
-4. **Document** - Update guides and examples
-5. **Review** - Code review and feedback
-6. **Commit** - Atomic commits with clear messages
-
-### Testing Strategy:
-- Unit tests for all new functions/classes
-- Integration tests for request/response cycles
-- Example projects serve as integration tests
-- Manual testing for UI-dependent features (WebSockets, etc.)
-
-### Documentation Strategy:
-- Dart docs on all public APIs
-- README updates for major features
-- Guides in docs/ directory
-- Examples in arrow_example/ and separate example projects
-
----
-
-## Timeline Summary
-
-| Phase | Duration | Key Deliverables |
-|-------|----------|-----------------|
-| Phase 1 | 3 weeks | HTTP methods, query helpers, validation, errors, cookies |
-| Phase 2 | 3 weeks | File uploads, static files, rate limiting, security, compression |
-| Phase 3 | 4 weeks | Flexible responses, streaming, WebSockets, timeouts, shutdown |
-| Phase 4 | 2 weeks | Examples, polish, documentation completion |
-| **Total** | **12 weeks** | **Production-ready framework** |
-
----
-
-## Risk Management
-
-### Resolved Blockers
-1. ~~HTTP server test timeout~~ — Solved with Completer-based test helper (see `docs/http-server-testing-solution.md`)
-2. ~~Flaky pipeline tests~~ — Fixed async timing assertions
-
-### Remaining Risks
-1. **Dart SDK limitations** — May need workarounds for some features
-2. **Performance regressions** — Benchmarking needed before 1.0
-3. **Endorse runtime** — ClassResult/ListResult commented out, needs restoration before code gen works
+4. Version bump to 0.2.0 after stabilization
 
 ---
 
 ## Next Steps
 
 1. ✅ Phase 1 complete (192 tests)
-2. ✅ Phase 2 complete (107 tests) — all 5 tasks done
-3. Begin Phase 3: Advanced Features (flexible responses, streaming, WebSockets, timeouts, graceful shutdown)
-4. Merge `dev` → `main` for stable release
+2. ✅ Phase 2 complete (107 tests)
+3. ✅ Architecture cleanup: timeouts, graceful shutdown, request ID, API simplification
+4. ✅ MCP code generation with HTTP transport
+5. Remaining Phase 3: flexible responses, streaming/SSE, WebSockets
+6. Phase 4: examples, polish, documentation completion
+7. Merge `dev` → `main` for stable release
 
 ---
 
 **Last Updated:** 2026-02-18
-**Status:** Phase 2 complete (5/5 tasks)
+**Status:** Phase 3 in progress (3 items remaining: flexible responses, streaming, WebSockets)
