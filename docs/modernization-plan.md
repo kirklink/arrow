@@ -4,7 +4,7 @@
 
 **Timeline:** 12 weeks (3 months)
 
-**Current Status:** Phase 2 in progress. ~65-70% feature-complete compared to modern frameworks
+**Current Status:** Phase 2 in progress. ~70-75% feature-complete compared to modern frameworks
 
 ---
 
@@ -58,21 +58,8 @@ Created HttpException hierarchy (BadRequest 400, Unauthorized 401, Forbidden 403
 
 ---
 
-### 2.2 Static File Serving
-**Duration:** 2 days
-**Task:** Middleware for serving static files
-
-**Implementation:**
-1. Static file serving middleware
-2. Directory path configuration
-3. ETag support for caching
-4. Range request support (partial content)
-5. Content-Type detection
-6. Cache-Control headers
-7. Write static file tests
-8. Document usage patterns
-
-**Why:** Serve frontend assets, images, downloads
+### 2.2 Static File Serving ✅
+`Router.serveStaticFiles()` method checked before route matching in `_serve()`. `StaticFilesConfig` with `index` (default `index.html`), `maxAge`, `etag`, custom `headers`. `MimeType` class with 30+ type-safe static constants and `fromPath()` lookup. `Responder.sendFile()` for streaming file responses (reusable by any handler). ETag via `"mtime-size"` with `If-None-Match` → 304. Cache-Control headers. Path traversal protection (canonical path verification). GET and HEAD support. 29 tests.
 
 ---
 
@@ -237,7 +224,7 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 - ✅ Rate limiting (fixed window, configurable)
 - ✅ Response compression (gzip via autoCompress)
 - ⬜ File uploads
-- ⬜ Static file serving
+- ✅ Static file serving (ETag, Cache-Control, MimeType, sendFile)
 - ⬜ Streaming responses
 - ⬜ WebSocket support
 - ⬜ Flexible response types
@@ -245,7 +232,7 @@ Exposed `HttpServer.autoCompress` via `Server` constructor `compress` parameter 
 - ⬜ Graceful shutdown
 
 ### Quality Metrics
-- **Tests:** 242 passing tests (target: 250+)
+- **Tests:** 271 passing tests (target: 250+) ✅
 - **Coverage:** TBD (target: >80%)
 - **Documentation:** Dart docs on all new public APIs
 - **Examples:** arrow_example demonstrates Phase 1 features
@@ -356,11 +343,11 @@ These are intentionally excluded from this plan:
 ## Next Steps
 
 1. ✅ Phase 1 complete
-2. Phase 2 in progress — security headers, rate limiting, compression done
-3. Remaining Phase 2: static file serving, file uploads
+2. Phase 2 in progress — security headers, rate limiting, compression, static files done
+3. Remaining Phase 2: file uploads
 4. Merge `dev` → `main` for stable release after Phase 2
 
 ---
 
-**Last Updated:** 2026-02-17
-**Status:** Phase 2 in progress (3/5 tasks complete)
+**Last Updated:** 2026-02-18
+**Status:** Phase 2 in progress (4/5 tasks complete)

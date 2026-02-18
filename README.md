@@ -118,6 +118,9 @@ req.respond.notFound(msg: 'Resource not found');   // 404
 req.respond.tooManyRequests(msg: 'Slow down');     // 429
 req.respond.serverError();                         // 500
 
+// File responses
+await req.respond.sendFile(File('uploads/photo.png'));
+
 // Custom responses
 req.respond.raw(418, {'message': "I'm a teapot"});
 req.respond.error(422, msg: 'Unprocessable');
@@ -150,6 +153,26 @@ apiRouter.get('/users', getUsers);
 - **enforceJsonContentType()** - Require `Content-Type: application/json`
 - **securityHeaders()** - Helmet-style security response headers (CSP, HSTS, etc.)
 - **rateLimit()** - IP-based rate limiting with configurable windows
+
+#### Static File Serving
+
+Serve frontend assets, images, and downloads with built-in caching:
+
+```dart
+final router = Router();
+
+// Serve files from 'web/public' at '/public/*'
+router.serveStaticFiles('/public', 'web/public');
+
+// With custom config
+router.serveStaticFiles('/assets', 'web/assets', StaticFilesConfig(
+  maxAge: 86400,       // Cache for 24 hours
+  etag: true,          // ETag-based caching (default)
+  index: 'index.html', // Index file for directories (default)
+));
+```
+
+Static mounts are checked before route matching. Includes ETag/304 support, Cache-Control headers, Content-Type detection via `MimeType`, path traversal protection, and HEAD request support.
 
 #### Custom Middleware
 
@@ -462,10 +485,10 @@ See [test/README.md](test/README.md) for testing documentation.
 - ✅ Security headers middleware (Helmet-style)
 - ✅ Rate limiting middleware (fixed window, configurable)
 - ✅ Response compression (gzip via `autoCompress`)
-- ✅ 242 passing tests
+- ✅ Static file serving with ETag caching and MimeType detection
+- ✅ 271 passing tests
 
 ### Roadmap
-- Static file serving
 - File upload support
 - Streaming responses
 - WebSocket support
