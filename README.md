@@ -150,6 +150,7 @@ apiRouter.get('/users', getUsers);
 - **cors()** - Cross-Origin Resource Sharing
 - **logger()** - Request logging
 - **readJsonContent()** - Parse JSON request bodies
+- **readMultipartContent()** - Parse multipart/form-data file uploads
 - **enforceJsonContentType()** - Require `Content-Type: application/json`
 - **securityHeaders()** - Helmet-style security response headers (CSP, HSTS, etc.)
 - **rateLimit()** - IP-based rate limiting with configurable windows
@@ -173,6 +174,31 @@ router.serveStaticFiles('/assets', 'web/assets', StaticFilesConfig(
 ```
 
 Static mounts are checked before route matching. Includes ETag/304 support, Cache-Control headers, Content-Type detection via `MimeType`, path traversal protection, and HEAD request support.
+
+#### File Uploads
+
+Parse multipart/form-data file uploads with configurable validation:
+
+```dart
+import 'package:arrow/middlewares.dart';
+
+final router = Router();
+
+// Apply multipart parsing middleware
+router.onRequest(readMultipartContent(MultipartConfig(
+  maxFileSize: 5 * 1024 * 1024,  // 5MB per file
+  maxFiles: 3,
+  allowedMimeTypes: ['image/jpeg', 'image/png'],
+)));
+
+router.post('/upload', (Request req) async {
+  final form = MultipartFormData.of(req)!;
+  final description = form.field('description');
+  final photo = form.file('photo');
+  // photo.filename, photo.contentType, photo.bytes, photo.size
+  return req.respond.ok(data: {'uploaded': photo?.filename});
+});
+```
 
 #### Custom Middleware
 
@@ -486,10 +512,11 @@ See [test/README.md](test/README.md) for testing documentation.
 - ✅ Rate limiting middleware (fixed window, configurable)
 - ✅ Response compression (gzip via `autoCompress`)
 - ✅ Static file serving with ETag caching and MimeType detection
-- ✅ 271 passing tests
+- ✅ File upload support (multipart/form-data with validation)
+- ✅ 299 passing tests
 
 ### Roadmap
-- File upload support
+- Flexible response types
 - Streaming responses
 - WebSocket support
 - Graceful shutdown
