@@ -1,0 +1,14 @@
+targets:
+  $default:
+    builders:
+      arrow_mcp_builder|mcp_server:
+        enabled: true
+
+builders:
+  mcp_server:
+    target: ":arrow_mcp_builder"
+    import: "package:arrow_mcp_builder/src/mcp_builder.dart"
+    builder_factories: ["mcpBuilder"]
+    build_extensions: {".dart": [".mcp.dart"]}
+    auto_apply: dependents
+    build_to: source
