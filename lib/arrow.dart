@@ -7,3 +7,5 @@ export 'src/request_middleware.dart';
 export 'src/response_middleware.dart';
 export 'src/guard.dart' show Guard;
 export 'src/http_exception.dart';
+export 'src/mime_type.dart';
+export 'src/static_files.dart' show StaticFilesConfig;

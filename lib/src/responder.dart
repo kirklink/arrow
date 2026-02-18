@@ -4,6 +4,7 @@ import 'dart:convert' show json;
 import 'response.dart';
 import 'request.dart';
 import 'arrow_exception.dart';
+import 'mime_type.dart';
 
 class Responder {
   final Request _request;
@@ -54,6 +55,34 @@ class Responder {
     final srcResponse = _request.innerRequest.response;
     srcResponse.statusCode = statusCode;
     _complete = true;
+    _response = Response(_request);
+    return _response;
+  }
+
+  /// Serve a file with appropriate Content-Type and caching headers.
+  ///
+  /// Unlike other Responder methods, this is `async` because it streams
+  /// the file contents to the response. The response is finalized after
+  /// streaming completes.
+  ///
+  /// ```dart
+  /// final file = File('uploads/photo.png');
+  /// return await req.respond.sendFile(file);
+  /// ```
+  Future<Response> sendFile(io.File file,
+      {String? contentType, int statusCode = 200}) async {
+    if (_complete) {
+      throw ArrowException('The response has already been set.');
+    }
+    final stat = await file.stat();
+    final srcResponse = _request.innerRequest.response;
+    srcResponse.statusCode = statusCode;
+    srcResponse.headers.set(io.HttpHeaders.contentTypeHeader,
+        contentType ?? MimeType.fromPath(file.path).value);
+    srcResponse.headers.set(io.HttpHeaders.contentLengthHeader, stat.size);
+    await srcResponse.addStream(file.openRead());
+    _complete = true;
+    _request.cancel();
     _response = Response(_request);
     return _response;
   }

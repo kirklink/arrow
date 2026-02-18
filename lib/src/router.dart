@@ -8,6 +8,7 @@ import 'route.dart';
 import 'pipeline.dart';
 import 'constants.dart';
 import 'recoverer.dart';
+import 'static_files.dart';
 
 typedef Router RouterBuilder();
 
@@ -20,6 +21,7 @@ class Router {
 
   List<Router> _childRouters = <Router>[];
   Map<String, List<Route>> _routeTree = Map<String, List<Route>>();
+  final List<StaticMount> _staticMounts = <StaticMount>[];
 
   var _notFoundPipeline = Pipeline();
   Handler? _notFoundHandler;
@@ -202,6 +204,35 @@ class Router {
     return route;
   }
 
+  /// Mount a directory for serving static files at a URL prefix.
+  ///
+  /// Static mounts are checked before route matching. If a file exists
+  /// under [directory] matching the request path, it is served directly.
+  /// Otherwise the request falls through to normal route matching.
+  ///
+  /// Only responds to GET and HEAD requests.
+  ///
+  /// ```dart
+  /// // Serve files from 'web/public' at '/public/*'
+  /// router.static('/public', 'web/public');
+  ///
+  /// // With custom config
+  /// router.static('/assets', 'web/assets', StaticFilesConfig(
+  ///   maxAge: 86400,
+  ///   etag: true,
+  /// ));
+  /// ```
+  void serveStaticFiles(String urlPrefix, String directory,
+      [StaticFilesConfig? config]) {
+    if (!urlPrefix.startsWith('/')) {
+      urlPrefix = '/$urlPrefix';
+    }
+    if (urlPrefix.endsWith('/')) {
+      urlPrefix = urlPrefix.substring(0, urlPrefix.length - 1);
+    }
+    _staticMounts.add(StaticMount(urlPrefix, directory, config));
+  }
+
   static Future<Response> _defaultNotFoundHandler(Request req) async {
     return req.respond.notFound();
   }
@@ -240,6 +271,14 @@ class Router {
   }
 
   Future<Response?> _serve(Request req) async {
+    // Check static file mounts first.
+    if (req.isAlive && _staticMounts.isNotEmpty) {
+      for (final mount in _staticMounts) {
+        final result = await mount.tryServe(req);
+        if (result != null) return result;
+      }
+    }
+
     if (req.isAlive && _childRouters.length > 0) {
       final childRouter = await _findChildRouter(req);
       if (childRouter != null) {
@@ -258,6 +297,15 @@ class Router {
         return route.serve(req);
       }
     }
+
+    // Static mounts or child routers exist but nothing matched — 404.
+    if (req.isAlive && (_staticMounts.isNotEmpty || _childRouters.isNotEmpty)) {
+      req.cancel();
+      return _notFoundPipeline.serve(
+          req, _notFoundHandler ?? _defaultNotFoundHandler,
+          forceHandlerToRun: true);
+    }
+
     return req.respond.serverError();
   }
 
