@@ -127,12 +127,24 @@ void main() {
         params.load({
           'path': '/users/123',
           'query': 'name=Alice&age=30',
-          'encoded': 'hello%20world',
         });
 
         expect(params.get('path'), equals('/users/123'));
         expect(params.get('query'), equals('name=Alice&age=30'));
-        expect(params.get('encoded'), equals('hello%20world'));
+      });
+
+      test('should URL-decode percent-encoded values', () {
+        final params = Parameters();
+
+        params.load({
+          'name': 'hello%20world',
+          'path': 'foo%2Fbar',
+          'emoji': '%F0%9F%8E%AF',
+        });
+
+        expect(params.get('name'), equals('hello world'));
+        expect(params.get('path'), equals('foo/bar'));
+        expect(params.get('emoji'), equals('\u{1F3AF}'));
       });
     });
 

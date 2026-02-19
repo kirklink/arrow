@@ -6,7 +6,7 @@ This file contains instructions and context for Claude Code when working on the 
 
 Arrow is an opinionated, Express-inspired Dart server framework for rapid REST API development. It's designed for the 80-90% use case where you need a standard JSON REST API with minimal boilerplate.
 
-**Current Status**: Architecture cleanup and MCP code generation complete. ~90-95% feature-complete compared to modern frameworks (Express, Hono, Gin, Echo). 351 passing tests in arrow, 14 in arrow_mcp_builder, 145 in arrow_example.
+**Current Status**: Architecture cleanup, MCP code generation, and JWT auth complete. ~95% feature-complete compared to modern frameworks (Express, Hono, Gin, Echo). 381 passing tests in arrow, 14 in arrow_mcp_builder, 238 in arrow_example.
 
 **Active Development**: Following a modernization plan. See `docs/modernization-plan.md` for details.
 
@@ -267,17 +267,42 @@ cors(CorsConfig(...))                    // CORS headers + preflight
 securityHeaders([SecurityHeadersConfig]) // Helmet-style security headers
 rateLimit([RateLimitConfig])             // IP-based fixed-window rate limiting
 requestId()                              // X-Request-ID correlation (generates or echoes)
+jwtAuth(JwtAuthConfig(...))              // JWT authentication (dart_jsonwebtoken)
 loggerIn()                               // request logger (start)
 loggerOut()                              // response logger (end)
 ```
 
+### JWT Authentication
+```dart
+import 'package:arrow/jwt.dart';         // re-exports dart_jsonwebtoken types
+
+// Global auth
+router.onRequest(jwtAuth(JwtAuthConfig(
+  key: SecretKey('my-secret'),
+  issuer: 'https://auth.example.com',    // optional
+  audience: 'my-api',                    // optional
+)));
+
+// Access verified JWT in handler
+final jwt = getJwt(req);                 // JWT? — null if middleware hasn't run
+jwt!.payload['sub'];                     // access claims
+
+// Per-route auth
+router.get('/admin', handler)
+  ..addOnRequest(jwtAuth(JwtAuthConfig(key: SecretKey('secret'))));
+
+// Sign tokens (login handler — no middleware needed)
+final jwt = JWT({'sub': userId, 'role': 'admin'});
+final token = jwt.sign(SecretKey('secret'), expiresIn: Duration(hours: 1));
+```
+
 ### Writing Custom Middleware
 ```dart
-RequestMiddleware requireAuth() {
+RequestMiddleware requireRole(String role) {
   return (Request req) async {
-    final token = req.headers.value('authorization');
-    if (token == null) {
-      req.respond.unauthorized(msg: 'Auth required'); // auto-cancels pipeline
+    final jwt = getJwt(req);
+    if (jwt == null || jwt.payload['role'] != role) {
+      req.respond.forbidden(msg: 'Insufficient permissions');
       return req;
     }
     return req;

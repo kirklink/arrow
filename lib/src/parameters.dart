@@ -26,6 +26,9 @@ class Parameters {
   void load(Map<String, String> srcParameters) {
     if (_parameters.isNotEmpty)
       throw ParametersException('Parameters already loaded.');
-    _parameters.addAll(Map<String, String>.from(srcParameters));
+    _parameters.addAll({
+      for (final entry in srcParameters.entries)
+        entry.key: Uri.decodeComponent(entry.value),
+    });
   }
 }

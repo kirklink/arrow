@@ -15,6 +15,9 @@ class Responder {
 
   Response get response => _response;
 
+  /// Whether a response has already been set on this responder.
+  bool get isComplete => _complete;
+
   /// Send a 200 OK response with optional data.
   Response ok({Map<String, dynamic> data = const <String, dynamic>{}}) {
     if (_complete) {

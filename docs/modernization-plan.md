@@ -2,7 +2,7 @@
 
 **Goal:** Bring Arrow to feature parity with modern web frameworks (Express, Hono, Gin, Echo)
 
-**Current Status:** Phases 1-2 complete, Phase 3 mostly complete. ~90-95% feature-complete. 351 passing tests.
+**Current Status:** Phases 1-2 complete, JWT auth complete, Phase 3 mostly complete. ~95% feature-complete. 380 passing tests.
 
 ---
 
@@ -75,6 +75,21 @@ SIGINT and SIGTERM signal handling with configurable drain period via `shutdownT
 `requestId()` middleware generates UUID v4 or echoes client-provided `X-Request-ID` header. ID stored in request context and set on response header. 7 tests.
 
 **Architecture cleanup total: 14 tests (plus existing tests updated for API changes).**
+
+---
+
+## JWT Authentication ✅
+
+### Provider-Agnostic JWT Auth Middleware ✅
+Replaced the half-baked Guard system and tightly-coupled Firebase auth with `jwtAuth()` middleware built on `dart_jsonwebtoken` (353 likes, 160/160 pub points, 14 algorithms). `JwtAuthConfig` with required `key` (any `JWTKey`: HMAC, RSA, ECDSA, EdDSA), optional `issuer`, `audience`, custom `tokenExtractor`, customizable error messages. Verified JWT stored in request context via `jwtKey`/`getJwt(req)`. Barrel export `lib/jwt.dart` re-exports `dart_jsonwebtoken` types so users don't need a separate dependency. 29 tests.
+
+### Guard System Removal ✅
+Deleted `Guard` typedef and all references. Guard was half-baked: single guard per route (overwrites), hardcoded 403, no customization, zero tests, zero usage. JWT middleware via `addOnRequest` is strictly superior.
+
+### Firebase Auth Removal ✅
+Deleted `lib/src/middlewares/firebase_authentication/` (4 files). Hand-rolled JWT parser tightly coupled to Firebase, used old context API, no tests. Users needing Firebase auth can use `dart_firebase_admin` separately.
+
+**JWT auth total: 29 tests.**
 
 ---
 
@@ -207,12 +222,13 @@ Generated dispatcher classes make real HTTP proxy calls to the Arrow server inst
 - ✅ Graceful shutdown (SIGINT/SIGTERM, in-flight drain, 503 during shutdown)
 - ✅ Request ID correlation (X-Request-ID, UUID generation)
 - ✅ MCP code generation (annotations, runtime types, HTTP transport proxy)
+- ✅ JWT authentication (provider-agnostic, dart_jsonwebtoken)
 - ⬜ Flexible response types
 - ⬜ Streaming responses / SSE
 - ⬜ WebSocket support
 
 ### Quality Metrics
-- **Tests:** 351 passing tests in arrow, 14 in arrow_mcp_builder, 145 in arrow_example (target: 250+) ✅
+- **Tests:** 381 passing tests in arrow, 14 in arrow_mcp_builder, 238 in arrow_example (target: 250+) ✅
 - **Coverage:** TBD (target: >80%)
 - **Documentation:** Dart docs on all new public APIs, CLAUDE.md API reference
 - **Examples:** arrow_example demonstrates Phases 1-2, MCP code generation
@@ -246,6 +262,7 @@ These are intentionally excluded from this plan:
 - `mime` - MIME type detection (multipart parsing)
 - `uuid` - UUID generation (request IDs)
 - `recase` - Case conversion (MCP code generation)
+- `dart_jsonwebtoken` - JWT verification and signing (14 algorithms)
 
 ### Companion Packages
 - `arrow_mcp_builder` - MCP code generation (source_gen/build_runner)
@@ -259,6 +276,9 @@ These are intentionally excluded from this plan:
 1. `Parameters.get()` returns `null` instead of empty string for missing params
 2. Responder error methods accept `Map<String, Object>` instead of `Map<String, String>`
 3. Middleware renamed: `CorsMiddleware(Cors(...))` → `cors(CorsConfig(...))`
+4. `Guard` system removed (use `jwtAuth()` or custom request middleware instead)
+5. Firebase authentication middleware removed (use `dart_firebase_admin` or `jwtAuth()` instead)
+6. `Parameters.get()` now URL-decodes path parameters (e.g., `hello%20world` → `hello world`). Remove any manual `Uri.decodeComponent()` calls on path params.
 
 ### Migration Strategy
 1. Document all breaking changes clearly
@@ -274,11 +294,12 @@ These are intentionally excluded from this plan:
 2. ✅ Phase 2 complete (107 tests)
 3. ✅ Architecture cleanup: timeouts, graceful shutdown, request ID, API simplification
 4. ✅ MCP code generation with HTTP transport
-5. Remaining Phase 3: flexible responses, streaming/SSE, WebSockets
+5. ✅ JWT authentication (Guard + Firebase auth removed)
+6. Remaining Phase 3: flexible responses, streaming/SSE, WebSockets
 6. Phase 4: examples, polish, documentation completion
 7. Merge `dev` → `main` for stable release
 
 ---
 
-**Last Updated:** 2026-02-18
+**Last Updated:** 2026-02-19
 **Status:** Phase 3 in progress (3 items remaining: flexible responses, streaming, WebSockets)

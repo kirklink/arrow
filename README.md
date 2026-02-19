@@ -160,6 +160,7 @@ apiRouter.get('/users', getUsers);
 - **securityHeaders()** - Helmet-style security response headers (CSP, HSTS, etc.)
 - **rateLimit()** - IP-based rate limiting with configurable windows
 - **requestId()** - `X-Request-ID` correlation (generates UUID or echoes client header)
+- **jwtAuth()** - JWT authentication with configurable key, issuer, audience
 - **loggerIn()** / **loggerOut()** - Request/response logging
 
 #### Static File Serving
@@ -207,22 +208,50 @@ router.post('/upload', (Request req) async {
 });
 ```
 
+#### JWT Authentication
+
+Arrow includes provider-agnostic JWT authentication built on [dart_jsonwebtoken](https://pub.dev/packages/dart_jsonwebtoken) (HMAC, RSA, ECDSA, EdDSA):
+
+```dart
+import 'package:arrow/jwt.dart';  // re-exports dart_jsonwebtoken types
+
+final router = Router();
+
+// Protect routes with JWT auth
+router.onRequest(jwtAuth(JwtAuthConfig(
+  key: SecretKey('my-secret'),
+  issuer: 'https://auth.example.com',    // optional
+  audience: 'my-api',                    // optional
+)));
+
+// Access verified JWT in handlers
+router.get('/me', (Request req) async {
+  final jwt = getJwt(req)!;
+  return req.respond.ok(data: {'userId': jwt.payload['sub']});
+});
+
+// Sign tokens in login handlers (unprotected route)
+router.post('/login', (Request req) async {
+  // ... validate credentials ...
+  final jwt = JWT({'sub': user.id, 'role': user.role});
+  final token = jwt.sign(SecretKey('my-secret'), expiresIn: Duration(hours: 1));
+  return req.respond.ok(data: {'token': token});
+});
+```
+
+`jwt.dart` re-exports all key types (`JWT`, `SecretKey`, `RSAPublicKey`, `ECPublicKey`, `EdDSAPublicKey`, etc.) so you don't need `dart_jsonwebtoken` as a direct dependency.
+
 #### Custom Middleware
 
 ```dart
 // Request middleware (runs before handler)
-RequestMiddleware authMiddleware() {
+RequestMiddleware requireRole(String role) {
   return (Request req) async {
-    final token = req.headers.value('authorization');
-
-    if (token == null) {
-      req.respond.unauthorized(msg: 'Missing auth token');
+    final jwt = getJwt(req);
+    if (jwt == null || jwt.payload['role'] != role) {
+      req.respond.forbidden(msg: 'Insufficient permissions');
       return req;
     }
-
-    final user = await validateToken(token);
-    req.context.setOrReplace(userKey, user);
-
     return req;
   };
 }
@@ -445,6 +474,7 @@ Arrow uses a consistent JSON response format:
 ```dart
 import 'package:arrow/arrow.dart';
 import 'package:arrow/middlewares.dart';
+import 'package:arrow/jwt.dart';
 
 void main() async {
   final app = Arrow();
@@ -461,10 +491,12 @@ void main() async {
     // Public routes
     router.get('/health', healthCheck);
 
-    // API routes with auth
+    // API routes with JWT auth
     final api = router.group('/api');
     api.onRequest(readJsonContent());
-    api.onRequest(requireAuth());
+    api.onRequest(jwtAuth(JwtAuthConfig(
+      key: SecretKey('my-secret'),
+    )));
 
     // User routes
     api.get('/users', getAllUsers);
@@ -497,8 +529,8 @@ Future<Response> getAllUsers(Request req) async {
 
 Future<Response> getUserById(Request req) async {
   final id = req.params.get('id');
-  // Your implementation
-  return req.respond.ok(data: {'id': id});
+  final jwt = getJwt(req)!; // verified JWT from middleware
+  return req.respond.ok(data: {'id': id, 'requestedBy': jwt.payload['sub']});
 }
 
 Future<Response> createUser(Request req) async {
@@ -516,22 +548,6 @@ Future<Response> deleteUser(Request req) async {
   final id = req.params.get('id');
   // Your implementation
   return req.respond.code(204);
-}
-
-RequestMiddleware requireAuth() {
-  return (Request req) async {
-    final token = req.headers.value('authorization');
-
-    if (token == null || token.isEmpty) {
-      req.respond.unauthorized(msg: 'Authentication required');
-      return req;
-    }
-
-    // Validate token and load user
-    // req.context.setOrReplace(userKey, user);
-
-    return req;
-  };
 }
 ```
 
@@ -587,7 +603,7 @@ See [test/README.md](test/README.md) for testing documentation.
 ## Project Status
 
 **Current Version:** 0.1.0-nullsafety.0
-**Status:** Active development — 351 passing tests
+**Status:** Active development — 381 passing tests
 
 ### Features
 - All HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD)
@@ -602,6 +618,7 @@ See [test/README.md](test/README.md) for testing documentation.
 - Request timeouts (configurable per-server)
 - Graceful shutdown (SIGINT/SIGTERM, in-flight drain)
 - Request ID correlation (X-Request-ID)
+- JWT authentication (provider-agnostic, 14 algorithms via dart_jsonwebtoken)
 - MCP code generation with HTTP transport proxy
 
 ### Roadmap

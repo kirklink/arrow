@@ -77,10 +77,11 @@ test/
 - ✅ serverError() 500 responses
 - ✅ Response prevention (throws on multiple responses)
 
-#### Parameters Tests (17 tests)
+#### Parameters Tests (18 tests)
 - ✅ Empty initialization
 - ✅ load() method with parameter maps
-- ✅ get() method returning values or empty string
+- ✅ get() method returning values or null for missing
+- ✅ URL-decoding of percent-encoded path parameters
 - ✅ ParametersException on double-load
 - ✅ Special characters and URL parameters
 - ✅ REST API and slug-based routing patterns

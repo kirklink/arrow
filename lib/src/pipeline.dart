@@ -78,7 +78,9 @@ class Pipeline {
 
     var res = (req.isAlive || forceHandlerToRun)
         ? await endpoint(req)
-        : req.respond.serverError();
+        : (req.respond.isComplete
+            ? req.respond.response
+            : req.respond.serverError());
 
     if (_responseHandlers.isNotEmpty) {
       res = await _processResponseHandlers(res, _responseHandlers);

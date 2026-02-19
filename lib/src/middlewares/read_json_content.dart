@@ -13,7 +13,7 @@ class JsonContent implements Content {
     if (content.trim().isNotEmpty) {
       final c = json.decode(content);
       if (c is Map) {
-        _map = c as Map<String, Object>;
+        _map = Map<String, Object>.from(c);
       } else if (c is List) {
         if (listWrapper.isNotEmpty) {
           _map = {listWrapper: c};

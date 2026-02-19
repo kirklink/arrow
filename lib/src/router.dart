@@ -249,7 +249,9 @@ class Router {
     print('Stacktrace:');
     print(stacktrace);
     print('-- End Recover --');
-    return req.respond.serverError();
+    return req.respond.isComplete
+        ? req.respond.response
+        : req.respond.serverError();
   }
 
   /// Add a [Recoverer] function to execute when an unhandled exception
@@ -302,7 +304,9 @@ class Router {
           forceHandlerToRun: true);
     }
 
-    return req.respond.serverError();
+    return req.respond.isComplete
+        ? req.respond.response
+        : req.respond.serverError();
   }
 
   Future<Response?> serve(Request req) async {
