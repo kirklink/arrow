@@ -23,7 +23,6 @@ class Router {
   Map<String, List<Route>> _routeTree = Map<String, List<Route>>();
   final List<StaticMount> _staticMounts = <StaticMount>[];
 
-  var _notFoundPipeline = Pipeline();
   Handler? _notFoundHandler;
 
   Recoverer _recoverer = _defaultRecoverer;
@@ -44,13 +43,9 @@ class Router {
   /// A [Router] can optionally be assigned a [Handler] to be used for not found routes
   /// (i.e. 404 errors) and/or a [Recoverer] from unhandled errors and exceptions.
   Router(
-      {Pipeline? notFoundPipeline,
-      bool shouldRecover = true,
+      {bool shouldRecover = true,
       Recoverer? recoverer})
       : _shouldRecover = shouldRecover {
-    if (notFoundPipeline != null) {
-      _notFoundPipeline = notFoundPipeline;
-    }
     if (recoverer != null) {
       _recoverer = recoverer;
     }
@@ -287,10 +282,13 @@ class Router {
     if (req.isAlive && _routeTree.length > 0) {
       var route = await _findRoute(req);
       if (route == null) {
-        req.cancel();
-        return _notFoundPipeline.serve(
-            req, _notFoundHandler ?? _defaultNotFoundHandler,
-            forceHandlerToRun: true);
+        // Run the regular pipeline so cross-cutting middleware (e.g. CORS
+        // preflight) can handle the request even when no route matches the
+        // method.  If middleware cancels the request (OPTIONS → 200) the
+        // not-found handler is skipped; otherwise it returns 404 with any
+        // headers the middleware set (e.g. Access-Control-Allow-Origin).
+        return _pipeline.serve(
+            req, _notFoundHandler ?? _defaultNotFoundHandler);
       } else {
         return route.serve(req);
       }
@@ -298,10 +296,8 @@ class Router {
 
     // Static mounts or child routers exist but nothing matched — 404.
     if (req.isAlive && (_staticMounts.isNotEmpty || _childRouters.isNotEmpty)) {
-      req.cancel();
-      return _notFoundPipeline.serve(
-          req, _notFoundHandler ?? _defaultNotFoundHandler,
-          forceHandlerToRun: true);
+      return _pipeline.serve(
+          req, _notFoundHandler ?? _defaultNotFoundHandler);
     }
 
     return req.respond.isComplete

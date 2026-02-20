@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' as io;
 import 'dart:convert' show json;
 
@@ -5,6 +6,7 @@ import 'response.dart';
 import 'request.dart';
 import 'arrow_exception.dart';
 import 'mime_type.dart';
+import 'sse.dart';
 
 class Responder {
   final Request _request;
@@ -104,6 +106,53 @@ class Responder {
         contentType ?? MimeType.fromPath(file.path).value);
     srcResponse.headers.set(io.HttpHeaders.contentLengthHeader, stat.size);
     await srcResponse.addStream(file.openRead());
+    _complete = true;
+    _request.cancel();
+    _response = Response(_request);
+    return _response;
+  }
+
+  /// Stream Server-Sent Events to the client.
+  ///
+  /// Sets the required SSE headers and writes each event from [events] to
+  /// the response as it arrives. The response is finalized when the stream
+  /// closes or the client disconnects.
+  ///
+  /// Like [sendFile], this is `async` because it streams content. The
+  /// handler should `await` the result:
+  ///
+  /// ```dart
+  /// router.get('/events', (req) async {
+  ///   final stream = myEvents.map((e) =>
+  ///       SseEvent(event: 'update', data: jsonEncode(e)));
+  ///   return await req.respond.sse(stream);
+  /// });
+  /// ```
+  Future<Response> sse(Stream<SseEvent> events) async {
+    if (_complete) {
+      throw ArrowException('The response has already been set.');
+    }
+    final srcResponse = _request.innerRequest.response;
+
+    srcResponse.statusCode = io.HttpStatus.ok;
+    srcResponse.headers.set(
+        io.HttpHeaders.contentTypeHeader, 'text/event-stream; charset=utf-8');
+    srcResponse.headers.set(io.HttpHeaders.cacheControlHeader, 'no-cache');
+    srcResponse.headers.set('Connection', 'keep-alive');
+    // Prevent gzip buffering — events must flush immediately.
+    srcResponse.headers.set('Content-Encoding', 'identity');
+    srcResponse.bufferOutput = false;
+
+    try {
+      await for (final event in events) {
+        srcResponse.write(event.encode());
+      }
+    } on io.HttpException {
+      // Client disconnected — normal for SSE.
+    } catch (_) {
+      // Ignore write errors on closed connections.
+    }
+
     _complete = true;
     _request.cancel();
     _response = Response(_request);
